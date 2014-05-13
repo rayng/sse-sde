@@ -1,0 +1,27 @@
+L=28   #<---- change lattice size
+#OBJECTS = /usr/local/lib/libRandom.a
+#FFTW_LIBS = /usr/lib64/
+#RANDOM_HD = /usr/local/include/
+#FFTW_HD = /usr/include/
+#EIGEN_HD = /usr/include/eigen3/
+
+OBJECTS = /home/rayn/randomlib/lib/libRandom.a
+NRC_HD = /home/rayn/include/NRC/recipes_cpp/
+EIGEN_HD = /home/rayn/include/eigen3/
+RANDOM_HD = /home/rayn/randomlib/include/     #<---- this is g++ compiled and what we want to use. 
+
+SOURCE = betadoubling-replicas-mpi.cpp	
+TARGET = betadoub-mpi$L
+CPP_HDFLAGS = -I$(RANDOM_HD) -I$(EIGEN_HD) 
+#OPTIONS =  -finline-functions -funroll-loops -fomit-frame-pointer -O2-pg
+
+OPTIONS =  -finline-functions -funroll-loops  -O2 
+
+#OPTIONS = -Wall -finline-functions -funroll-loops -fomit-frame-pointer -O3 -fast-transcendentals 
+CC = mpic++
+#CC = g++
+
+ALL:
+	$(CC) $(CPP_FLAGS) $(SOURCE) $(CPP_HDFLAGS) $(CPP_LDFLAGS) $(LIBRARIES) -o $(TARGET) $(OBJECTS) $(OPTIONS)	
+clean:
+	rm -f *.o*~
