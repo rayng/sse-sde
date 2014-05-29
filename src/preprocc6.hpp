@@ -28,6 +28,7 @@
 // ----------------------------------------------------------
 // ----------------------------------------------------------
 
+
 #define loadfield 0
 #define FS 0
 #define bounceA 1  // This is the old way of calculating bounce weights
@@ -35,11 +36,12 @@
 #define WUsweeps 5000
 #define Nbins 50
 #define MCsweeps 100
+#define append 0
 
-#define Hamsweeps 60001   // only needed for hamming calculations
 
-#define Lx 10  /***/
-#define Ly 1  /***/
+#define system "uniform"
+#define Lx 4  /***/
+#define Ly 4  /***/
 #define Lz 1  
 #define d 2
 #define N  (Lx*Ly*Lz)
@@ -52,16 +54,16 @@
 // These are the key parameters
 #define no_real 50000        /***/
 #define nsteps 40             /***/
-#define Np 64                /***/
-#define hbi (4.7 /(2.*d))
-#define hbf (4.8 /(2.*d))    
+#define Np 1                /***/
+#define hbi (1. /(2.*d))
+#define hbf (3. /(2.*d))    
 //#define dh  ((hbf- hbi) / (double) nsteps )
-#define dh  (0.025 / (2.*d) )
+#define dh  (0.5 / (2.*d) )
 
 // ------------------------
 // beta doubling parameters
 // ------------------------
-#define nmax 10
+#define nmax 6
 #define Ne 24
 #define Nm (2*Ne)
 

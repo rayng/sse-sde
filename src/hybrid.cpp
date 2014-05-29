@@ -5,12 +5,9 @@
 //
 #include "preprocc6.hpp"
 
-string MODEL="dis"; // X bins of Y samples
-string EXT =".dat";
-string PREFIX = "ERR";
-int GLOBAL_REAL, GLOBAL_RANK;
 
-string dir="./sse-sde/";    /********  change this  ********/
+int GLOBAL_REAL, GLOBAL_RANK;
+string dir="../";    /********  change this  ********/
 int batch, h_iter;
 
 // -----------------------------------------------------
@@ -22,15 +19,11 @@ int main(int argc, char* argv[])
 {
   int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end;
   lattice alpha, beta_;
-  //bin segA[nmax], segB[nmax];
-  
   // Set up field arrays.
   h_iter=convertString(argv[1]);     // This shift is just to add the extra field values I'm calculating. h=5 => h=4.75 now
   batch = convertString(argv[2]);
   hb = hbi+h_iter*dh;                  // field values
-  n_per_interval = no_real/Np;           /* steps given to each process    */
-  if(no_real%Np!=0)
-    n_per_interval++;                    // Just make everyone do one extra instead of adjusting the load of the last process
+  n_per_interval=1;
   
   // Set up file stream
   SETUP_FILE_STREAMS();
@@ -38,16 +31,9 @@ int main(int argc, char* argv[])
   r.Reseed();                // Every batch must get a new seed.   
   
   for(rr=0; rr<n_per_interval; rr++) {
-    
     alpha.init_state="hightemp";    // random initial state
-    beta_.init_state="hightemp";    // random initial state
-    
     alpha.set_M(Mo);     // Initialise M
     alpha.set_nH(no);    // Initialise no
-    
-    beta_.set_M(Mo);     // Initialise M
-    beta_.set_nH(no);    // Initialise no
-    
     GLOBAL_REAL=rr;     // realization number
     GLOBAL_RANK=batch;  // batch number
     
@@ -62,9 +48,9 @@ int main(int argc, char* argv[])
     // WARMUP CONFIGS: (initial state is too far from equilibrium)
     // ---------------------------------
     alpha.init_config("hightemp");
-    beta_.init_config("hightemp");
     
     fp1 << rr <<  " " ;
+    
     for( nn=0; nn< nmax; nn++)
       {
 	beta = pow(2., nn);
@@ -73,12 +59,13 @@ int main(int argc, char* argv[])
 	    W[bb][i]=beta*Nb*W[bb][i];
 	
 	alpha.extend_arrays();
-	beta_.extend_arrays();
+	
 	
 	// +++++++++++++++++++++++++++++++++++++++++++++
 	//  Replica - A
 	// ----------------------
 	//  Warm up segment
+	
 	n_sum=0; Nl_sum=0;
 	for(i=0; i<4*Ne; i++) {
 	  alpha.diagonal_update();
@@ -88,7 +75,7 @@ int main(int argc, char* argv[])
 	alpha.set_Nl(Nl_sum/(4*Ne));
 	
 	//  Measure segment - No adjusting during measurement
-	for( i=0; i < Nm; i++) 
+	for( i=0; i < Nm; i++) // Most of the sampling is done here. 
 	  {
 	    alpha.diagonal_update();
 	    alpha.loop_update(i,ferr);
@@ -97,29 +84,6 @@ int main(int argc, char* argv[])
 	alpha.XPS.average(Nm);
 	alpha.write_to_file(fp1);
 	alpha.XPS.zero();
-	
-	
-	// +++++++++++++++++++++++++++++++++++++++++++++
-	//  Replica - B
-	// ----------------------
-	//  Warm up segment
-	n_sum=0; Nl_sum=0;
-	for(i=0; i<4*Ne; i++) {
-	  beta_.diagonal_update();
-	  beta_.adjust_truncate();
-	  beta_.loop_update_eqm(i, ferr);
-	}
-	beta_.set_Nl(Nl_sum/(4*Ne));
-	
-	//  Measure segment - No adjusting during measurement
-	for(i=0; i<Nm; i++) {
-	  beta_.diagonal_update();
-	  beta_.loop_update(i,ferr);
-	  beta_.measure();
-	}
-	beta_.XPS.average(Nm);
-	beta_.write_to_file(fp1);
-	beta_.XPS.zero();
 	
 	// +++++++++++++++++++++++++++++++++++++++++++++
 	// Normalise the weight or it will keep compounding
@@ -134,7 +98,6 @@ int main(int argc, char* argv[])
     
     
     alpha.free_arrays();
-    beta_.free_arrays();
     
     free(bsite);
   }
@@ -318,17 +281,23 @@ void BUILD_LATTICE()
   // Staggered case
   hav=0.;
   for(i=0; i<N; i++) {
-    //h[i] = phi[i]*hb;
-    //h[i] = hb;
-    //h[i] = 2.*hb*r.FloatN()-hb;
-    h[i] = hb*r.FloatW<double>();
+    
+#if($system==staggered)
+    h[i] = phi[i]*hb;
+#endif
+    
+#if($system==uniform)
+    h[i] = hb;
+#endif
+
+#if($system==disorder)
+    h[i] = 2.*hb*r.FloatN()-hb;
     hav+=h[i];
   }
-  
   hav = hav / (double) N;
   for(i=0; i<N; i++)
     h[i] -= hav;
-  
+#endif
   
     // -------------------------------------------------
   // INITIALISE VERTEX LIST
@@ -988,23 +957,33 @@ double convertStringD(const string &phrase)
 
 void SETUP_FILE_STREAMS()
 {
+  string sys = convertInt(Lx)+"x"+convertInt(Ly);
   // Name of file:
-  string infile = dir+"data/"+convertInt(Lx)+"x"+convertInt(Ly)+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string infile = dir+"data/"+sys+"/DIST/"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string errfile= dir+"data/"+sys+"/ERR/ERRh"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
   int ret=-1;
   struct stat buff;
   ret=stat(infile.c_str(), &buff );
   
   // This will test if the file exists..
   // If it does not then create it and start fresh. 
+
+#if(!append)
+  fp1.open(infile.c_str(), ios::out);
+  ferr.open ( errfile.c_str(), ios:: out  );
+  
+#else
   if(ret!=0) {
     fp1.open(infile.c_str(), ios::out);
-    ferr.open ( (dir+"ERR/ERR"+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta)).c_str(), ios:: out  );
+    ferr.open ( errfile.c_str(), ios:: out  );
   }
   // If the file exists then we will append to it. 
   else if (ret==0) {
     fp1.open(infile.c_str(), ios::app);
-    ferr.open ( (dir+"ERR/ERR"+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta)).c_str(), ios:: app  );
+    ferr.open ( errfile.c_str(), ios:: out  );
   }
+#endif
+
   
 #if saveconfig
   fp2.open  ( (dir+"CONFIG/init"+convertInt(Lx)+"x"+convertInt(Ly)+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta)).c_str(), ios:: out );
