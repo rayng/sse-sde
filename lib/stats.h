@@ -60,5 +60,26 @@ public:
     physobs[2] = (obs[8]  - obs[7]*obs[7] - obs[7] ) / (beta *hh*hh *N) ;     // disorder suscpetiblity
     physobs[3] = (obs[10] - obs[9]*obs[9] - obs[9] ) / (beta *hh*hh *N) ;     // hopping susceptibility
   }
+
+
+
+  void write_to_file(ofstream& fp)
+    {
+      int i;
+      double deltaE=0.;
+      // I want to include that additive constant for the energy as well:
+      for(int b=0; b<Nb; b++)
+	deltaE += epsilonn[b] + hb;
+      deltaE=deltaE/ Nb;
+      
+      
+      for (i=0; i<nobs-1; i++)  // ignore the fidelity susceptibility- 13 observables
+	if (i==1)
+	  fp << setprecision(15) << -obs[i]/(beta*Nb) + deltaE << " " ;
+	else 
+	  fp << setprecision(15) << obs[i] << " " ;
+    }
+  
+
 };
 
