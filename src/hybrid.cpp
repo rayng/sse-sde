@@ -17,8 +17,10 @@ int batch, h_iter;
 // -----------------------------------------------------
 int main(int argc, char* argv[])
 {
-  int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end;
+  int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num;
   lattice alpha, beta_;
+  bin obs;
+
   // Set up field arrays.
   h_iter=convertString(argv[1]);     // This shift is just to add the extra field values I'm calculating. h=5 => h=4.75 now
   batch = convertString(argv[2]);
@@ -29,14 +31,12 @@ int main(int argc, char* argv[])
   SETUP_FILE_STREAMS();
   int Mo=20, no=0, NlA, NlB;
   r.Reseed();                // Every batch must get a new seed.   
-  
   for(rr=0; rr<n_per_interval; rr++) {
     alpha.init_state="hightemp";    // random initial state
     alpha.set_M(Mo);     // Initialise M
     alpha.set_nH(no);    // Initialise no
     GLOBAL_REAL=rr;     // realization number
     GLOBAL_RANK=batch;  // batch number
-    
     // ---------------------------------
     // INITIALISE
     // ---------------------------------
@@ -51,30 +51,32 @@ int main(int argc, char* argv[])
     
     fp1 << rr <<  " " ;
     
-    for( nn=0; nn< nmax; nn++)
+    //for( nn=0; nn< nmax; nn++)
+    //{
+    //beta = pow(2., nn);
+    beta = Lx;   // fix beta
+    
+    for(bb=0; bb<Nb; bb++)            // Renormalize the weight
+      for(i=0; i<nV; i++)
+	W[bb][i]=beta*Nb*W[bb][i];
+    
+    alpha.extend_arrays();
+    // +++++++++++++++++++++++++++++++++++++++++++++
+    //  Replica - A
+    // ----------------------
+    //  Warm up segment
+    n_sum=0; Nl_sum=0;
+    for(i=0; i<4*Ne; i++) {
+      alpha.diagonal_update();
+      alpha.adjust_truncate();
+      alpha.loop_update_eqm(i, ferr);
+    }
+    alpha.set_Nl(Nl_sum/(4*Ne));
+    
+    //  Measure segment - No adjusting during measurement
+    
+    for(num=0; num<samples; num++)
       {
-	beta = pow(2., nn);
-	for(bb=0; bb<Nb; bb++)            // Renormalize the weight
-	  for(i=0; i<nV; i++)
-	    W[bb][i]=beta*Nb*W[bb][i];
-	
-	alpha.extend_arrays();
-	
-	
-	// +++++++++++++++++++++++++++++++++++++++++++++
-	//  Replica - A
-	// ----------------------
-	//  Warm up segment
-	
-	n_sum=0; Nl_sum=0;
-	for(i=0; i<4*Ne; i++) {
-	  alpha.diagonal_update();
-	  alpha.adjust_truncate();
-	  alpha.loop_update_eqm(i, ferr);
-	}
-	alpha.set_Nl(Nl_sum/(4*Ne));
-	
-	//  Measure segment - No adjusting during measurement
 	for( i=0; i < Nm; i++) // Most of the sampling is done here. 
 	  {
 	    alpha.diagonal_update();
@@ -82,23 +84,15 @@ int main(int argc, char* argv[])
 	    alpha.measure();
 	  } 
 	alpha.XPS.average(Nm);
-	alpha.write_to_file(fp1);
+	obs+=alpha.XPS;  // dump a bin
 	alpha.XPS.zero();
-	
-	// +++++++++++++++++++++++++++++++++++++++++++++
-	// Normalise the weight or it will keep compounding
-	// ----------------------
-	for(bb=0; bb<Nb; bb++)    
-	  for(i=0; i<nV; i++)
-	    W[bb][i]=W[bb][i]/(Nb*beta);
       }
-    
+    obs.average(samples);
+    obs.write_to_file(fp1);
+    //alpha.write_to_file(fp1);
     fp1 << endl;
     fp1.flush();
-    
-    
     alpha.free_arrays();
-    
     free(bsite);
   }
   
@@ -282,24 +276,28 @@ void BUILD_LATTICE()
   hav=0.;
   for(i=0; i<N; i++) {
     
-#if($system==staggered)
-    h[i] = phi[i]*hb;
-#endif
+    //#if($system==staggered)
+    //h[i] = phi[i]*hb;
+    //#endif
     
-#if($system==uniform)
-    h[i] = hb;
-#endif
-
-#if($system==disorder)
+    //#if($system==uniform)
+    //h[i] = hb;
+    //#endif
+    
+    
+    /*#if($system==disorder)
     h[i] = 2.*hb*r.FloatN()-hb;
     hav+=h[i];
-  }
-  hav = hav / (double) N;
+    hav = hav / (double) N;
   for(i=0; i<N; i++)
     h[i] -= hav;
 #endif
+    */
+  h[i]=hb;
   
-    // -------------------------------------------------
+  }
+  
+  // -------------------------------------------------
   // INITIALISE VERTEX LIST
   // -------------------------------------------------
   for(i=0; i<nV; i++)

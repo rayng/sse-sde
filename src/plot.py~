@@ -1,0 +1,37 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+L=4
+nmax=10
+nobs=13
+sys=str(L)+"x"+str(L)
+
+for h in np.arange(0,5):
+    fn=np.loadtxt("../data/"+sys+"/DIST/"+sys+"h"+str(h)+"p0beta0")  #unpack sorts it according to columns
+
+    temp=[]
+    
+    
+    for n in np.arange(0,nmax):
+        temp.append(pow(2., n))
+        
+        rho_col=1+(n)*nobs+7
+        m_col =1+(n)*nobs+3
+        plt.subplot(1,2,1)
+        plt.title('Stiffness')
+        plt.xscale('log')
+        plt.scatter([temp[n]], [fn[rho_col]], c='r')#
+        plt.subplot(1,2,2)
+        plt.title('Magnetization')
+        plt.xscale('log')
+        plt.scatter([temp[n]], [fn[m_col]], c='r')#
+        
+        
+    
+    plt.show()
+    
+    
+    
+    

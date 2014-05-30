@@ -40,8 +40,8 @@
 
 
 #define system "uniform"
-#define Lx 4  /***/
-#define Ly 4  /***/
+#define Lx 8  /***/
+#define Ly 8  /***/
 #define Lz 1  
 #define d 2
 #define N  (Lx*Ly*Lz)
@@ -58,14 +58,15 @@
 #define hbi (1. /(2.*d))
 #define hbf (3. /(2.*d))    
 //#define dh  ((hbf- hbi) / (double) nsteps )
-#define dh  (0.5 / (2.*d) )
+#define dh  (0.25 / (2.*d) )
 
 // ------------------------
 // beta doubling parameters
 // ------------------------
-#define nmax 6
-#define Ne 24
+#define nmax 10
+#define Ne 256
 #define Nm (2*Ne)
+#define samples 1000
 
 // ------------------------
 // Simplex parameters
