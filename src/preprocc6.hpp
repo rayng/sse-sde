@@ -66,7 +66,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 100
+#define samples 1000
 
 // ------------------------
 // Simplex parameters
