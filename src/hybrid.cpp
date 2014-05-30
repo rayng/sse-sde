@@ -281,7 +281,8 @@ void BUILD_LATTICE()
   // Staggered case
   hav=0.;
   for(i=0; i<N; i++) {
-    
+
+    /*    
 #if($system==staggered)
     h[i] = phi[i]*hb;
 #endif
@@ -293,11 +294,16 @@ void BUILD_LATTICE()
 #if($system==disorder)
     h[i] = 2.*hb*r.FloatN()-hb;
     hav+=h[i];
+    */
+    h[i]=hb;
   }
+  /*
   hav = hav / (double) N;
   for(i=0; i<N; i++)
     h[i] -= hav;
+
 #endif
+  */
   
     // -------------------------------------------------
   // INITIALISE VERTEX LIST

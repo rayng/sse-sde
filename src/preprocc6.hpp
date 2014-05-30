@@ -40,8 +40,8 @@
 
 
 #define system "uniform"
-#define Lx 4  /***/
-#define Ly 4  /***/
+#define Lx 8  /***/
+#define Ly 8  /***/
 #define Lz 1  
 #define d 2
 #define N  (Lx*Ly*Lz)
@@ -63,8 +63,8 @@
 // ------------------------
 // beta doubling parameters
 // ------------------------
-#define nmax 6
-#define Ne 24
+#define nmax 5
+#define Ne 128
 #define Nm (2*Ne)
 
 // ------------------------
