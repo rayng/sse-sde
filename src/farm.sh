@@ -1,6 +1,6 @@
 
 make -f MakefileSerial
-L=8
+L=16
 folder="../data/"$L"x"$L"/"
 mkdir $folder
 mkdir $folder"DIST"

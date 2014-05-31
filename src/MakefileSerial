@@ -1,4 +1,4 @@
-L=8   #<---- change lattice size
+L=16   #<---- change lattice size
 OBJECTS = /usr/local/lib/libRandom.a
 FFTW_LIBS = /usr/lib64/
 RANDOM_HD = /usr/local/include/

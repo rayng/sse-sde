@@ -49,7 +49,6 @@ int main(int argc, char* argv[])
     // ---------------------------------
     alpha.init_config("hightemp");
     
-    fp1 << rr <<  " " ;
     
     //for( nn=0; nn< nmax; nn++)
     //{
@@ -82,15 +81,11 @@ int main(int argc, char* argv[])
 	    alpha.diagonal_update();
 	    alpha.loop_update(i,ferr);
 	    alpha.measure();
+	    alpha.write_to_file(fp1);
+	    alpha.XPS.zero();
+	    fp1 << endl;
 	  } 
-	alpha.XPS.average(Nm);
-	obs+=alpha.XPS;  // dump a bin
-	alpha.XPS.zero();
       }
-    obs.average(samples);
-    obs.write_to_file(fp1);
-    //alpha.write_to_file(fp1);
-    fp1 << endl;
     fp1.flush();
     alpha.free_arrays();
     free(bsite);
@@ -957,7 +952,7 @@ void SETUP_FILE_STREAMS()
 {
   string sys = convertInt(Lx)+"x"+convertInt(Ly);
   // Name of file:
-  string infile = dir+"data/"+sys+"/DIST/"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string infile = dir+"data/"+sys+"/DIST/"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta)+"autocorr";
   string errfile= dir+"data/"+sys+"/ERR/ERRh"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
   int ret=-1;
   struct stat buff;

@@ -37,8 +37,6 @@ for h in np.arange(0,8):
     plt.scatter([hh[h]], [comp], c='b')
 
     
-        
-    
     #plt.show()
 plt.show()
     
