@@ -27,16 +27,14 @@
 //
 // ----------------------------------------------------------
 // ----------------------------------------------------------
-
-
 #define loadfield 0
 #define FS 0
 #define bounceA 1  // This is the old way of calculating bounce weights
 #define saveconfig 0
-#define WUsweeps 5000
-#define Nbins 50
-#define MCsweeps 100
 #define append 0
+//#define WUsweeps 5000
+//#define Nbins 50
+//#define MCsweeps 100
 
 
 #define system "uniform"
@@ -44,21 +42,22 @@
 #define Ly 8  /***/
 #define Lz 1  
 #define d 2
-#define N  (Lx*Ly*Lz)
+
+// These are the key parameters
+#define no_real 50000        /***/
+#define nsteps 8             /***/
+#define Np 1                /***/
+#define hbi (1. /(2.*d))
+#define hbf (3. /(2.*d))    
+#define dh  ((hbf- hbi) / nsteps )
+//#define dh  (0.25 / (2.*d) )
+
+#define N (Lx*Ly*Lz)
 #define Nb (d*N)
 #define nV 8
 #define Pi 3.145159265
 #define Delta 0.
 #define nobs 14
-
-// These are the key parameters
-#define no_real 50000        /***/
-#define nsteps 40             /***/
-#define Np 1                /***/
-#define hbi (1. /(2.*d))
-#define hbf (3. /(2.*d))    
-//#define dh  ((hbf- hbi) / (double) nsteps )
-#define dh  (0.25 / (2.*d) )
 
 // ------------------------
 // beta doubling parameters
@@ -67,6 +66,7 @@
 #define Ne 128
 #define Nm (2*Ne)
 #define samples 1000
+
 
 // ------------------------
 // Simplex parameters
@@ -78,6 +78,8 @@
 #define  zerotol 1e-13
 
 typedef REAL MAT[MMAX][NMAX];
+
+double beta, T, hb; 
 
 MAT  A;
 int  IPOSV[MMAX], IZROV[NMAX];
@@ -104,8 +106,7 @@ using namespace std;
 using namespace Eigen;
 
 RandomLib::Random r;
-//double beta, T, hb; 
-double hb, beta;
+
 
 // ------------------------
 // Variable sized arrays
@@ -133,8 +134,8 @@ int vtx_flip[nV][4][4]; // one half of the array is redundant really
 // ------------------------
 // Output streams
 // ------------------------
-ofstream fp1,fp2, fp3, feq, ferr, fprobout;
-ifstream frd, feps, flog, fprobin;
+ofstream fp1,fp2, fp3, feq, ferr, fprobout, fconfig;
+ifstream frd, feps, flog, fprobin, fin;
 
 
 // ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -177,6 +178,7 @@ void EXTEND_ARRAYS(lattice&a);
 void CHECK_PROBTABLE();
 void WRITE_HEADER(ofstream& fp);
 void FREE_ARRAYS(lattice& a);
+void gen_config();
 
 // ------------------------
 // SIMPLEX METHOD SUBROUT-
@@ -214,6 +216,8 @@ string convertInt (int t);
 string convertDouble (double t);
 int convertString(const string &phrase);
 double convertStringD(const string &phrase);
+
+
 string EQ_FILENAME, NAME, FILENAME, ERROR, FOLDER;
 
 

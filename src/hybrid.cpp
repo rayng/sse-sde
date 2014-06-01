@@ -9,6 +9,8 @@
 int GLOBAL_REAL, GLOBAL_RANK;
 string dir="../";    /********  change this  ********/
 int batch, h_iter;
+string config; 
+
 
 // -----------------------------------------------------
 //
@@ -20,15 +22,18 @@ int main(int argc, char* argv[])
   int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num;
   lattice alpha, beta_;
   bin obs;
-
+  
   // Set up field arrays.
-  h_iter=convertString(argv[1]);     // This shift is just to add the extra field values I'm calculating. h=5 => h=4.75 now
+  h_iter=convertString(argv[1]);     
+  config="../init/init.config"+convertInt(Lx)+"h"+argv[1];
   batch = convertString(argv[2]);
   hb = hbi+h_iter*dh;                  // field values
   n_per_interval=1;
   
   // Set up file stream
   SETUP_FILE_STREAMS();
+  gen_config();
+  
   int Mo=20, no=0, NlA, NlB;
   r.Reseed();                // Every batch must get a new seed.   
   for(rr=0; rr<n_per_interval; rr++) {
@@ -102,6 +107,18 @@ int main(int argc, char* argv[])
   return 0;
 }
 // *********************************** END OF MAIN PROGRAM  **********************************************
+
+
+
+void gen_config()
+{
+  fconfig.open(config.c_str(), ios::out); 
+  if(fconfig==NULL)
+    cout << "No config file" << endl;
+  fconfig << Lx << " " << Ly << " " <<  Lz <<  " " << hbi*2.*d << " " << hbf*2.*d << " " << nsteps << " " << h_iter << " " <<  beta << " " <<  Ne << " " << samples ;
+  fconfig.close();
+}
+
 
 
 
@@ -273,29 +290,27 @@ void BUILD_LATTICE()
   // INITIALISE RANDOM FIELD
   // -------------------------------------------------
   // Staggered case
-  hav=0.;
-  for(i=0; i<N; i++) {
-    
-    //#if($system==staggered)
-    //h[i] = phi[i]*hb;
-    //#endif
-    
-    //#if($system==uniform)
-    //h[i] = hb;
-    //#endif
-    
-    
-    /*#if($system==disorder)
-    h[i] = 2.*hb*r.FloatN()-hb;
-    hav+=h[i];
-    hav = hav / (double) N;
-  for(i=0; i<N; i++)
-    h[i] -= hav;
-#endif
-    */
-  h[i]=hb;
   
-  }
+  if(system=="staggered")
+    for(i=0; i<N; i++) 
+       h[i] = phi[i]*hb;
+  
+  if(system=="uniform")
+    for(i=0; i<N; i++) 
+      h[i] = hb;
+  
+  if(system=="disorder")
+    {
+      hav=0.;
+      for(i=0; i<N; i++) 
+	h[i] = 2.*hb*r.FloatN()-hb;
+      //hav+=h[i];          // No more shifting
+      //hav = hav / (double) N;
+      //for(i=0; i<N; i++)
+      //h[i] -= hav;
+    }
+  
+
   
   // -------------------------------------------------
   // INITIALISE VERTEX LIST
@@ -562,7 +577,7 @@ void GENERATE_PROBTABLE_SIMPLEX()
 
 
 
-
+/*
 // -------------------------------------------------------------------------------------------------------
 //
 void WRITE_HEADER(ofstream& fp)
@@ -590,6 +605,7 @@ void WRITE_HEADER(ofstream& fp)
      << "stiffness" << sp << "comp"  << endl;
   fp << "# ================================================================================="    << endl;
 }
+*/
 
 
 // =======================================================================================================
@@ -990,6 +1006,8 @@ void SETUP_FILE_STREAMS()
   
   assert(ferr!=NULL);
   assert(fp1!=NULL);
+  
+
   
 }
 
