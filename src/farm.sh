@@ -19,7 +19,6 @@ do
 	#sqsub -q serial -n 1 --mpp=1G -r 7d -o $folder"OUT/"out"h"${i}"b"${b}"beta"${beta}.log ./betadoub$L ${i} ${b} 
 	./hybrid$L ${i} ${b} &
     done 
-    
 done
 
 

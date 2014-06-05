@@ -1,0 +1,35 @@
+commit 113b670d35032fd46ee09f708c2fc2e67113e268
+Author: rayng <rayng83@gmail.com>
+Date:   Sat May 31 21:39:14 2014 -0400
+
+    Fixed the system=disorder, uniform, staggered choice and created a subroutine that generates ../init/init.config. I should only have to change preprocc.hpp from now on. All subsequent scripts should read from init.config
+
+commit 202130293e2890b1ea3ea13e38e35c984c06a9f5
+Author: rayng <rayng83@gmail.com>
+Date:   Fri May 30 16:09:28 2014 -0400
+
+    Added error bars for stiffness in plot.py
+
+commit 5abd81e00329cca82d275544446f8eaf3d1e7212
+Author: rayng <rayng83@gmail.com>
+Date:   Fri May 30 15:42:28 2014 -0400
+
+    Included new write_to_file subroutine in bin class
+
+commit 0cb02fd637b8a2f0018d1bdfcfebcb1969453cf9
+Author: rayng <rayng83@gmail.com>
+Date:   Fri May 30 04:08:56 2014 -0400
+
+    I mis-used #if(system) and it didnt initialise the fields right. It is working now after removing it and initialising explicitly
+
+commit 0191ddb0b54e633400e404455bf8cdc4e84c963f
+Author: rayng <rayng83@gmail.com>
+Date:   Thu May 29 15:37:09 2014 -0400
+
+    hybrid.cpp is now reduced to the uniform case. Some tweaks are: 1. Removed appending 2. Removed replica beta_
+
+commit 013a08b16459487f5ac591a211bd81661b795086
+Author: rayng <rayng83@gmail.com>
+Date:   Tue May 13 16:04:09 2014 -0400
+
+    Just added all the source and library files from ORCA. Program is still customized for disorder problem

@@ -1,4 +1,6 @@
 
+# This script plots stiffness and compressibility versus field value
+# It can be easily modified to include other observables as well.
 # Not for beta doubling.
 
 import numpy as np
