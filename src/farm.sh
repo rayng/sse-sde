@@ -11,7 +11,7 @@ mkdir $folder"OUT"
 mkdir $folder"CONFIG"
 
 # {14..18}}
-for i in {0..7}    #field: nsteps goes in here           
+for i in {0..15}    #field: nsteps goes in here           
 #for i in 0
 do 
     for b in 0   # processor 

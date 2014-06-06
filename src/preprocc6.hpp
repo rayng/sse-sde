@@ -45,10 +45,10 @@
 
 // These are the key parameters
 #define no_real 50000        /***/
-#define nsteps 8             /***/
+#define nsteps 16             /***/
 #define Np 1                /***/
-#define hbi (1. /(2.*d))
-#define hbf (3. /(2.*d))    
+#define hbi (2.7 /(2.*d))
+#define hbf (3.2 /(2.*d))    
 #define dh  ((hbf- hbi) / nsteps )
 //#define dh  (0.25 / (2.*d) )
 
@@ -65,8 +65,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 1000
-
+#define samples 500
 
 // ------------------------
 // Simplex parameters

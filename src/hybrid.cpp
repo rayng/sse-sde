@@ -32,11 +32,12 @@ int main(int argc, char* argv[])
   
   // Set up file stream
   SETUP_FILE_STREAMS();
+  // I am not sure how this is to be automated. 
   gen_config();
-  
   int Mo=20, no=0, NlA, NlB;
   r.Reseed();                // Every batch must get a new seed.   
   for(rr=0; rr<n_per_interval; rr++) {
+    beta = 2.*Lx;   // fix beta
     alpha.init_state="hightemp";    // random initial state
     alpha.set_M(Mo);     // Initialise M
     alpha.set_nH(no);    // Initialise no
@@ -49,23 +50,13 @@ int main(int argc, char* argv[])
     GENERATE_PROBTABLE_SIMPLEX();        
     CHECK_PROBTABLE();
     //PRINT_PROBTABLE2(ferr);
+    //PRINT_WEIGHTS2(ferr);
+    
     // ---------------------------------
     // WARMUP CONFIGS: (initial state is too far from equilibrium)
     // ---------------------------------
     alpha.init_config("hightemp");
     
-    fp1 << rr <<  " " ;
-    
-    //for( nn=0; nn< nmax; nn++)
-    //{
-    //beta = pow(2., nn);
-    beta = Lx;   // fix beta
-    
-    for(bb=0; bb<Nb; bb++)            // Renormalize the weight
-      for(i=0; i<nV; i++)
-	W[bb][i]=beta*Nb*W[bb][i];
-    
-    alpha.extend_arrays();
     // +++++++++++++++++++++++++++++++++++++++++++++
     //  Replica - A
     // ----------------------
@@ -79,7 +70,6 @@ int main(int argc, char* argv[])
     alpha.set_Nl(Nl_sum/(4*Ne));
     
     //  Measure segment - No adjusting during measurement
-    
     for(num=0; num<samples; num++)
       {
 	for( i=0; i < Nm; i++) // Most of the sampling is done here. 
@@ -94,7 +84,6 @@ int main(int argc, char* argv[])
       }
     obs.average(samples);
     obs.write_to_file(fp1);
-    //alpha.write_to_file(fp1);
     fp1 << endl;
     fp1.flush();
     alpha.free_arrays();
@@ -209,7 +198,7 @@ void BUILD_LATTICE()
   // vertex 2  ->    X  X
   //                 ----
   //                 O  O
-  optype[2] = 0;
+  optype[2] = 1;
   eps_bool[2] = false;
   legspin[2][2] = 1;  legspin[2][3] = 1;
   legspin[2][0] = -1;  legspin[2][1] = -1;
@@ -244,7 +233,7 @@ void BUILD_LATTICE()
   // vertex 6  ->    O  O
   //                 ----
   //                 X  X
-  optype[6] = 0;
+  optype[6] = 1;
   eps_bool[6] = false;
   legspin[6][2] = -1;  legspin[6][3] = -1;
   legspin[6][0] = 1;  legspin[6][1] = 1;
@@ -304,10 +293,10 @@ void BUILD_LATTICE()
       hav=0.;
       for(i=0; i<N; i++) 
 	h[i] = 2.*hb*r.FloatN()-hb;
-      //hav+=h[i];          // No more shifting
-      //hav = hav / (double) N;
-      //for(i=0; i<N; i++)
-      //h[i] -= hav;
+      hav+=h[i];          // No more shifting
+      hav = hav / (double) N;
+      for(i=0; i<N; i++)
+	h[i] -= hav;
     }
   
 
@@ -387,15 +376,15 @@ void GENERATE_PROBTABLE_SIMPLEX()
       hj = h[bsite[1][b]];
       
       // We need to add back epsilon later on.
-      W[b][0]= 0.5;
-      W[b][1]= 0.5*(-hi+hj) + hb;         // + epsilonn[b];
-      W[b][2]= 0.;
-      W[b][3]= 0.5*(-hi-hj) + hb;         // + epsilonn[b];
+      W[b][0]= 0.25;
+      W[b][1]= 0.;         // + epsilonn[b];
+      W[b][2]= 0.25;
+      W[b][3]= -hb;         // + epsilonn[b];
       
-      W[b][4]= 0.5;
-      W[b][5]= 0.5*(hi-hj) + hb;          // + epsilonn[b];
-      W[b][6]= 0.;
-      W[b][7]= 0.5*(hi+hj) + hb;          // + epsilonn[b];
+      W[b][4]= 0.25;
+      W[b][5]= 0.;          // + epsilonn[b];
+      W[b][6]= 0.25;
+      W[b][7]= hb;          // + epsilonn[b];
       
       /* -----------------------------------
 	 Let the madness begin ... 
@@ -542,10 +531,12 @@ void GENERATE_PROBTABLE_SIMPLEX()
       for(k=0; k<nV; k++) {
 	if(eps_bool[k])
 	  W[b][k] += epsilonn[b];
-	//if( abs(W[b][k]) < zerotol && W[b][k]!=0.) {
-	//W[b][k]=0.;
-	//cout << "Negative weights!: " << b << " " << k << " " << W[b][k]  << endl;  
-	//}
+	
+	if( abs(W[b][k]) < zerotol && W[b][k]!=0.) {
+	  W[b][k]=0.;
+	  cout << "Negative weights!: " << b << " " << k << " " << W[b][k]  << endl;  
+	}
+	
       }
       for(k=0; k<nV; k++)
 	for(i=0; i<4; i++)
@@ -566,10 +557,12 @@ void GENERATE_PROBTABLE_SIMPLEX()
 	      }
 	  }
       
-      //for(i=0; i<nV; i++)
-      //W[b][i]=beta*Nb*W[b][i];   // renormalize this bond-dependent weight 
+      
+      for(i=0; i<nV; i++)
+	W[b][i]=beta*Nb*W[b][i];   // renormalize this bond-dependent weight 
+      
     }
-  //ftest << "DONE WITH PROBABILY TABLE GENERATION" << endl;
+  
 }
 
 // =======================================================================================================
@@ -732,6 +725,21 @@ void PRINT_SPINLIST(lattice& a, ofstream& fp)
 }
 
 
+void PRINT_WEIGHTS2(ofstream& fp)
+{
+  for(int l=0; l<Nb; l++)
+    {
+      for(int i=0; i<nV; i++)
+	fp << "W[" <<l<<"]["<< i << "]: " <<  W[l][i] <<endl;
+      
+      fp<<endl;
+    }
+  fp <<endl;
+}
+
+
+
+
 // =======================================================================================================
 
 /*
@@ -865,17 +873,7 @@ void PRINT_WEIGHTS(ofstream& fp)
 // =======================================================================================================
 
 
-void PRINT_WEIGHTS2(ofstream& fp)
-{
-  for(int l=0; l<Nb; l++)
-    {
-      for(int i=0; i<nV; i++)
-	fp << "W[" <<l<<"]["<< i << "]: " <<  W[l][i] <<endl;
-      
-      fp<<endl;
-    }
-  fp <<endl;
-}
+
 
 // =======================================================================================================
 
@@ -973,8 +971,8 @@ void SETUP_FILE_STREAMS()
 {
   string sys = convertInt(Lx)+"x"+convertInt(Ly);
   // Name of file:
-  string infile = dir+"data/"+sys+"/DIST/"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
-  string errfile= dir+"data/"+sys+"/ERR/ERRh"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string infile = dir+"data/"+sys+"/DIST/TIM-"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string errfile= dir+"data/"+sys+"/ERR/ERR_TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
   int ret=-1;
   struct stat buff;
   ret=stat(infile.c_str(), &buff );
