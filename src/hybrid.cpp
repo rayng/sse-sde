@@ -22,8 +22,7 @@ int main(int argc, char* argv[])
   int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num;
   lattice alpha, beta_;
   bin obs;
-  
-  // Set up field arrays.
+    // Set up field arrays.
   h_iter=convertString(argv[1]);     
   config="../init/init.config"+convertInt(Lx)+"h"+argv[1];
   batch = convertString(argv[2]);
@@ -49,9 +48,8 @@ int main(int argc, char* argv[])
     BUILD_LATTICE();          
     GENERATE_PROBTABLE_SIMPLEX();        
     CHECK_PROBTABLE();
-    //PRINT_PROBTABLE2(ferr);
-    //PRINT_WEIGHTS2(ferr);
-    
+    PRINT_PROBTABLE2(ferr);
+    //PRINT_WEIGHTS2(ferr);    
     // ---------------------------------
     // WARMUP CONFIGS: (initial state is too far from equilibrium)
     // ---------------------------------
@@ -72,13 +70,18 @@ int main(int argc, char* argv[])
     //  Measure segment - No adjusting during measurement
     for(num=0; num<samples; num++)
       {
+	psamples=0;       	
+	msamples=0;            // Note that when taking parity into consideration 
+	                       // Nm is such that Nm = msamples + psamples
+	
 	for( i=0; i < Nm; i++) // Most of the sampling is done here. 
 	  {
 	    alpha.diagonal_update();
 	    alpha.loop_update(i,ferr);
 	    alpha.measure();
 	  } 
-	alpha.XPS.average(Nm);
+	assert(Nm==psamples+msamples);
+	alpha.XPS.parityaverage(Nm);
 	obs+=alpha.XPS;  // dump a bin
 	alpha.XPS.zero();
       }
@@ -299,7 +302,7 @@ void BUILD_LATTICE()
 	h[i] -= hav;
     }
   
-
+  
   
   // -------------------------------------------------
   // INITIALISE VERTEX LIST
@@ -367,7 +370,7 @@ void GENERATE_PROBTABLE_SIMPLEX()
   for(b=0; b<Nb; b++)
     {
       /*printf("\n");
-      printf(" Number of variables in E.F.: %d \n", NN); 
+	printf(" Number of variables in E.F.: %d \n", NN); 
       printf(" Number of <= inequalities..: %d \n", M1); 
       printf(" Number of >= inequalities..: %d \n", M2); 
       printf(" Number of = equalities.....: %d \n", M3); 
@@ -385,6 +388,18 @@ void GENERATE_PROBTABLE_SIMPLEX()
       W[b][5]= 0.;          // + epsilonn[b];
       W[b][6]= 0.25;
       W[b][7]= hb;          // + epsilonn[b];
+      
+      /*
+      W[b][0]= 0.25;
+      W[b][1]= hb;         // + epsilonn[b];
+      W[b][2]= 0.25;
+      W[b][3]= 0.;         // + epsilonn[b];
+      
+      W[b][4]= 0.25;
+      W[b][5]= hb;          // + epsilonn[b];
+      W[b][6]= 0.5;
+      W[b][7]= 2.*hb;          // + epsilonn[b];
+      */
       
       /* -----------------------------------
 	 Let the madness begin ... 
@@ -556,7 +571,6 @@ void GENERATE_PROBTABLE_SIMPLEX()
 		prob[b][i][j][vlist[k][i]] = 0.;
 	      }
 	  }
-      
       
       for(i=0; i<nV; i++)
 	W[b][i]=beta*Nb*W[b][i];   // renormalize this bond-dependent weight 

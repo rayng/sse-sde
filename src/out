@@ -1,3 +1,21 @@
+commit 782adc9756aefbafebf369fea63d7177e3117399
+Author: rayng <rayng83@gmail.com>
+Date:   Mon Jun 9 16:44:50 2014 -0400
+
+    Latest version of hybrid.cpp is able to calculate Esus. In order to do so one has to be careful in counting the number of samples for a given parity sector. The constraint is: psamples+msamples=Nsamples for each bin. I therefore had to hardcode a different version of averaging in the bins class in stats.h. It is called parity averaging. Quantities in the positive sector are averaged over psamples and conversely for the negative sector. The final samples over the number of independent bins is still taken over Nsamples. Next up is to test the fidelity susceptibility and then for the 1D case.
+
+commit 5d270b96ba7c1b0002be9037f175e144882e9ae6
+Author: rayng <rayng83@gmail.com>
+Date:   Fri Jun 6 02:37:22 2014 -0400
+
+    Changed weights to that of -J\sum_ij SxiSxj-h\sum_i Szi TIM hamiltonian. Note that the optype bug was fixed and the initializaton of beta was positioned properly. Also plot.py script was modified to calculated energy susceptibility
+
+commit 7649268c6665f34a567046a9dd823e914b6487bb
+Author: rayng <rayng83@gmail.com>
+Date:   Thu Jun 5 15:01:19 2014 -0400
+
+    I just added comments to plot.py
+
 commit 113b670d35032fd46ee09f708c2fc2e67113e268
 Author: rayng <rayng83@gmail.com>
 Date:   Sat May 31 21:39:14 2014 -0400

@@ -115,36 +115,57 @@ void lattice::init_config(string state)
    long int i, b;
    int v, s0, s1, s2, s3;
    double pinsert, premove, rand;
-   for(i=0; i<M; i++) {
-     rand = r.FloatN<double>();
-     if( sm[i] == -1 ) {  // identity operator found
-       b = r.IntegerC<long int>(0,Nb-1);
-       //calculate the matrix element:   <alpha(p) | H | alpha(p) >
-       v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  // insert diagonal element  
-       // pinsert = (beta*Nb*W[b][v]) / (double) (M-nH)  ;
-       pinsert = W[b][v] / (double) (M-nH)  ;
-       if (pinsert>=rand) {
-	 sm[i] = 2*b ;
-	 nH++; 
-       }
-       else 
-	 continue;
+   
+      
+   for(i=0; i<M; i++) 
+     {
+       rand = r.FloatN<double>();
+       
+       if( sm[i] == -1 ) 
+	 {  // identity operator found
+	   b = r.IntegerC<long int>(0,Nb-1);
+	   
+	   //calculate the matrix element:   <alpha(p) | H | alpha(p) >
+	   v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  
+	   // insert diagonal element  
+	   // pinsert = (beta*Nb*W[b][v]) / (double) (M-nH)  ;
+	   pinsert = W[b][v] / (double) (M-nH)  ;
+	   
+	   if (pinsert>=rand) 
+	     {
+	       sm[i] = 2*b ;
+	       nH++; 
+	     }
+	   else 
+	     continue;
+	 }
+       else if ( sm[i]%2 == 0)  // diagonal
+	 {    
+	   b = sm[i]/2;
+	   v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  
+	   // remove diagonal element  	  
+	   //premove =  (double) (M-nH+1) / (beta*Nb * W[b][v]) ; 
+	   premove =  (double) (M-nH+1) / W[b][v] ; 
+	   if (premove>=rand) 
+	     {
+	       sm[i]  = -1 ; 
+	       nH--; 
+	     }
+	 }
+       else  
+	 {
+	   b = sm[i] /2;
+	   spin[bsite[0][b]] = -spin[bsite[0][b]];  //update spin
+	   spin[bsite[1][b]] = -spin[bsite[1][b]];
+	 }
+       
+       
      }
-     else if ( sm[i]%2 == 0) {    // diagonal
-       b = sm[i]/2;
-       v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  // insert diagonal element  	  //premove =  (double) (M-nH+1) / (beta*Nb * W[b][v]) ; 
-       premove =  (double) (M-nH+1) / W[b][v] ; 
-       if (premove>=rand) {
-	 sm[i]  = -1 ; 
-	 nH--; 
-       }
-     }
-     else  {
-       b = sm[i] /2;
-       spin[bsite[0][b]] = -spin[bsite[0][b]];  //update spin
-       spin[bsite[1][b]] = -spin[bsite[1][b]];
-     }
-   }
+   
+   
+   
+   
+   
  }
  // **************************************************
 
@@ -218,6 +239,7 @@ void lattice::construct_linklist()
   for(p=0; p<M; p++) {
     vo = 4*v;
     lnk =  sm[p]/2;
+    
     // Extract spins associated wth bond
     i1 = bsite[0][lnk];
     i2 = bsite[1][lnk];
@@ -269,6 +291,8 @@ void lattice::construct_linklist()
       linklist[l] = f;
     }
   }
+
+  
 }
 
 // **************************************************
@@ -367,6 +391,8 @@ void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
   for(i=0; i<nH; i++)
     vtx_temp[i]=vtx[i];
   
+  
+    
   while(1)
     { 
       // Finds number of loops to form based on how many vertices are visited
@@ -407,8 +433,9 @@ void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
 	islong=true;
 	goto SKIP;   // start over
       }
- 
-    RETRY:
+      
+      //RETRY:
+      //cout << "crapped out" << endl;
       r1 = r.FloatN<double>();
       //r1=0.;
       cum_prob =0.;
@@ -426,7 +453,7 @@ void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
 	      break;
 	    }
 	
-	  // We should never make it here because we                                                                                                                                                        // are given a chance to break the loop above                                                                                                                                                   
+	  // We should never make it here because we                                                                                                                                                        // are given a chance to break the loop above                                                                                                                                                   	 
 	  if(e==3) {
 	    ferr << "No exit found for vtx: " << vtx_temp[p] << " located on bond "<< bb <<   " in equilibrim stage!" << endl;
 	    ferr << "Vertex: " << vtx_temp[p] << " Entering in: " << l << " exiting via: " << e << endl;
@@ -435,7 +462,7 @@ void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
                  << " + " << prob[bb][l][0][vtx_temp[p]] << " + " << prob[bb][l][1][vtx_temp[p]]
                  << " + " << prob[bb][l][2][vtx_temp[p]] << " + " << prob[bb][l][3][vtx_temp[p]]
                  << " = " << cum_prob << endl << endl;
-            goto RETRY;    // in case we crap out again 
+            //goto RETRY;    // in case we crap out again 
 	  }
 	}
       j = 4*p+e;
@@ -483,6 +510,7 @@ void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
   // | ----- Update Spin List ----- |
   update_spin_config();
   delete vtx_temp;
+  
 
 }
 
@@ -619,17 +647,35 @@ void lattice::measure()
   long int p, b, i,  Nxm=0, Nxp=0, Nym=0, Nyp=0, nn=0;
   long int  ndistemp=0, nhoptemp=0;
   long double mtemp=0., stagtemp=0., windnumx=0., windnumy=0., hh=2.*d*hb;
+  int parity=1;
+  
+  // include parity check
+#if(parityinclusion)
+  long int nhopparp=0, nhopparm=0;
+  long int ndisparp=0, ndisparm=0;
+#endif
+  
 #if(FS)
   Array<int, Dynamic,1 > Nhist; 
   vector<int> posn;
 #endif
   
   for(i=0; i<N; i++) {
+    parity=parity*spin[i];
     mtemp += spin[i];
     stagtemp += phi[i]*spin[i];
   }
+	  
+  assert(parity==1 || parity ==-1);
+  
+  if(parity==1)
+    psamples++;
+  else if (parity==-1)
+    msamples++;
+  
   mtemp    = 0.5*mtemp / (double) N;
   stagtemp = 0.5*stagtemp / (double) N;
+  
   // staggered magnetization
   long double am;
   am = stagtemp;
@@ -637,43 +683,62 @@ void lattice::measure()
     {
       if( sm[i]==-1 )
 	continue;
-      else if( sm[i]%2 ==1 ) {                                      // off-diagonal 
-	b = sm[i]/2;
-	spin[bsite[0][b]] = -spin[bsite[0][b]];                   // flip spins
-	spin[bsite[1][b]] = -spin[bsite[1][b]];
-	am += 2.0*phi[ bsite[0][b] ]*spin[ bsite[0][b] ];
-	
-	// -------------------------------------------
-	// Calculate the spin stiffness. 
-	// -------------------------------------------
-	// I need to calculate the winding number. 
-	if(b<N) {                                       // This means it's an x bond. Recall x bonds number from 0 to N  
-	  if( spin[bsite[0][b]]==1)
-	    Nxp++;
-	  else if(spin[bsite[1][b]]==1)
-	    Nxm++;
-	}
-	else if(b>=N && b<2*N) {                                // This means it's an y bond. Recall y bonds number from N to 2N  
-	  if( spin[bsite[0][b]]==1)
-	    Nyp++;
-	  else if( spin[bsite[1][b]]==1)
-	    Nym++;	      
-	}
-	// -------------------------------------------
-	nhoptemp++;
-	
-#if(FS)
-	posn.push_back(nn);  // this stores the positions of the hopping parameters
+      else if( sm[i]%2 ==1 ) 
+	{                                      // off-diagonal 
+	  b = sm[i]/2;
+	  spin[bsite[0][b]] = -spin[bsite[0][b]];                   // flip spins
+	  spin[bsite[1][b]] = -spin[bsite[1][b]];
+	  am += 2.0*phi[ bsite[0][b] ]*spin[ bsite[0][b] ];
+	  
+	  // -------------------------------------------
+	  // Calculate the spin stiffness. 
+	  // -------------------------------------------
+	  // I need to calculate the winding number. 
+	  if(b<N) 
+	    {
+	      // This means it's an x bond. Recall x bonds number from 0 to N  
+	      if( spin[bsite[0][b]]==1)
+		Nxp++;
+	      else if(spin[bsite[1][b]]==1)
+		Nxm++;
+	    }
+	  else if(b>=N && b<2*N) 
+	    {                                // This means it's an y bond. Recall y bonds number from N to 2N  
+	      if( spin[bsite[0][b]]==1)
+		Nyp++;
+	      else if( spin[bsite[1][b]]==1)
+		Nym++;	      
+	    }
+	  
+#if(parityinclusion)
+	  if(parity==1)
+	    nhopparp++;
+	  else
+	    nhopparm++;
 #endif
-	
-	nn++;
-      }
-      else {
-	ndistemp++;
-	nn++;
-      }
+
+	  nhoptemp++;   // ignoring parity hopping terms
+	  
+#if(FS)
+	  posn.push_back(nn);  // this stores the positions of the hopping parameters
+#endif
+	  nn++;
+	}
+      else  // non-trivial diagonal operators
+	{
+
+#if(parityinclusion)	  
+	  if(parity==1)
+	    ndisparp++;
+	  else
+	    ndisparm++;
+#endif
+	  ndistemp++;   // ignoring parity disorder terms
+	  nn++; 
+	}
       stagtemp+=am;
     }
+  
   windnumx = (Nxp-Nxm)/ (double) Lx;
   windnumy = (Nyp-Nym)/ (double) Ly;
   
@@ -712,10 +777,12 @@ void lattice::measure()
   //AmnNm  += fs/(hh*hh);
 
 #endif
-  long double windnumsq = (windnumx*windnumx + windnumy*windnumy)*0.5;
+
+
   // ++++++++++++++++++++++++++++++++++++++++++++++++
   // Accumulate the sum of averages
   // ++++++++++++++++++++++++++++++++++++++++++++++++
+  long double windnumsq = (windnumx*windnumx + windnumy*windnumy)*0.5;
   XPS.dump( (long double) nH, 0 );                             // Energy
   XPS.dump( (long double) nH, 1 );                             // nop
   XPS.dump( (long double) (nH) * (long double) (nH), 2 );                        // nop^2
@@ -725,12 +792,31 @@ void lattice::measure()
   XPS.dump( stagtemp/(N*nH), 6 );                         // staggered magnetization  <-- this is fishy but we dont need it so whatever.
   XPS.dump( windnumsq*Pi/beta, 7 );                       // stiffness
   XPS.dump( windnumsq*windnumsq, 8);                      // W^4 for binder cumulants
+  
+  // No parity distinction
   XPS.dump( (long double) ndistemp, 9 );                       // Number disorder
   XPS.dump( (long double) (ndistemp*ndistemp) , 10 );          // Number disorder^2
   XPS.dump( (long double) nhoptemp, 11 );                 // Number hopping operators
   XPS.dump( (long double) (nhoptemp*nhoptemp), 12);       // Number hopping^2
+  
+  // With parity distinction
+  // + sector
+#if(parityinclusion)
+  XPS.dump( (long double) ndisparp, 13 );                      // Number disorder +
+  XPS.dump( (long double) (ndisparp*ndisparp) , 14 );          // 
+  // - sector
+  XPS.dump( (long double) ndisparm, 15 );                      // Number disorder +
+  XPS.dump( (long double) (ndisparm*ndisparm) , 16 );          // 
+  // + sector
+  XPS.dump( (long double) nhopparp, 17 );                      // Number hop +
+  XPS.dump( (long double) (nhopparp*nhopparp) , 18 );          // 
+  // - sector
+  XPS.dump( (long double) nhopparm, 19 );                      // Number hop - 
+  XPS.dump( (long double) (nhopparm*nhopparm) , 20 );          //
+#endif
+  
 #if FS
-  XPS.dump( fs/(hh*hh), 13);                              // Number hopping^2
+  XPS.dump( fs/(hh*hh), 21);                              // Number hopping^2
 #endif  
   
     

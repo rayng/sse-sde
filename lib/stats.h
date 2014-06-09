@@ -41,6 +41,24 @@ public:
       obs[i] = obs[i] / (double) nn;
   }
 
+  void parityaverage(int nn)
+  {
+    for(int i=0; i<nobs; i++)
+      {
+	//p=+1
+	if(i==13 || i==14 || i==17 || i==18)
+	  obs[i] = obs[i] / (double) psamples ;
+	
+	// p=-1
+	else if(i==15 || i==16 || i==19 || i==20)
+	  obs[i] = obs[i] / (double) msamples ;
+	
+	else
+	  obs[i]=obs[i]/ (double) nn;
+      }
+    
+  }
+  
   void zero()
   {
     for(int i=0; i<nobs; i++) {
@@ -49,7 +67,6 @@ public:
     }
     
   }
-
   
   // this only works if the average is normalized.
   void generate_physical_obs()
@@ -71,7 +88,6 @@ public:
       for(int b=0; b<Nb; b++)
 	deltaE += epsilonn[b] + hb;
       deltaE=deltaE/ Nb;
-      
       
       for (i=0; i<nobs-1; i++)  // ignore the fidelity susceptibility- 13 observables
 	if (i==1)
