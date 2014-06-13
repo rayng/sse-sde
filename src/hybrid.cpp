@@ -3,6 +3,8 @@
 // Over here I will modify the nuber of loops in the problem. 
 // The average number of vertices visited should be roughly 2 <nH>
 //
+// Now lets calculate the fidelity susceptibility. 
+//
 #include "preprocc6.hpp"
 
 
@@ -73,7 +75,6 @@ int main(int argc, char* argv[])
 	psamples=0;       	
 	msamples=0;            // Note that when taking parity into consideration 
 	                       // Nm is such that Nm = msamples + psamples
-	
 	for( i=0; i < Nm; i++) // Most of the sampling is done here. 
 	  {
 	    alpha.diagonal_update();

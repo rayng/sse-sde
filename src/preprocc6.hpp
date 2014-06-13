@@ -26,7 +26,7 @@
 // ----------------------------------------------------------
 // ----------------------------------------------------------
 #define loadfield 0
-#define FS 0
+#define FS 1
 #define bounceA 1  // This is the old way of calculating bounce weights
 #define saveconfig 0
 #define append 0
@@ -37,8 +37,8 @@
 
 
 #define system "uniform"
-#define Lx 8  /***/
-#define Ly 8 /***/
+#define Lx 16  /***/
+#define Ly 16 /***/
 #define Lz 1  
 #define d 2
 
@@ -46,7 +46,7 @@
 #define no_real 50000        /***/
 #define nsteps 16             /***/
 #define Np 1                /***/
-#define hbi (1.375 /(2.*d))
+#define hbi (1.35 /(2.*d))
 #define hbf (1.575 /(2.*d))    
 #define dh  ((hbf- hbi) / nsteps )
 //#define dh  (0.25 / (2.*d) )
@@ -56,7 +56,7 @@
 #define nV 8
 #define Pi 3.145159265
 #define Delta 0.
-#define nobs 22
+#define nobs 24
 
 // ------------------------
 // beta doubling parameters
@@ -64,7 +64,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 200
+#define samples 500
 
 // ------------------------
 // Simplex parameters
@@ -72,7 +72,7 @@
 #define  MMAX  1000
 #define  NMAX  1000
 #define  REAL  double
-#define  EPSMIN 1.0
+#define  EPSMIN 0.2
 #define  zerotol 1e-13
 
 typedef REAL MAT[MMAX][NMAX];
