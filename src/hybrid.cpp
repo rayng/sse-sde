@@ -21,7 +21,7 @@ string config;
 // -----------------------------------------------------
 int main(int argc, char* argv[])
 {
-  int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num;
+  int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num,s,t;
   lattice alpha, beta_;
   bin obs;
     // Set up field arrays.
@@ -79,17 +79,41 @@ int main(int argc, char* argv[])
 	  {
 	    alpha.diagonal_update();
 	    alpha.loop_update(i,ferr);
+
+#if(measureobs)	    
 	    alpha.measure();
+#endif
 	  } 
+	
+	
+#if(measureobs)
 	assert(Nm==psamples+msamples);
 	alpha.XPS.parityaverage(Nm);
 	obs+=alpha.XPS;  // dump a bin
 	alpha.XPS.zero();
+#endif
+	
+#if(sdeevolve)
+	for(s=0; s< ntrajs; s++)
+	  {
+	    alpha.init_traj();
+	    
+	    for(t=0; t<nT; t++)
+	      {
+		alpha.traj.evolve();
+		alpha.traj.write_variables(fp2,t);
+	      }
+	    
+	  }
+#endif
       }
+    
+#if(measureobs)
     obs.average(samples);
     obs.write_to_file(fp1);
     fp1 << endl;
     fp1.flush();
+#endif
     alpha.free_arrays();
     free(bsite);
   }
@@ -986,8 +1010,10 @@ void SETUP_FILE_STREAMS()
 {
   string sys = convertInt(Lx)+"x"+convertInt(Ly);
   // Name of file:
-  string infile = dir+"data/"+sys+"/DIST/TIM-"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
-  string errfile= dir+"data/"+sys+"/ERR/ERR_TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string infile = dir+"data/"+sys+"/DIST/SDE-TIM-"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string errfile= dir+"data/"+sys+"/ERR/ERR_SDE-TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string sdefile= dir+"data/"+sys+"/SDE/SDE-TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  
   int ret=-1;
   struct stat buff;
   ret=stat(infile.c_str(), &buff );
@@ -997,8 +1023,7 @@ void SETUP_FILE_STREAMS()
 
 #if(!append)
   fp1.open(infile.c_str(), ios::out);
-  ferr.open ( errfile.c_str(), ios:: out  );
-  
+  ferr.open ( errfile.c_str(), ios:: out  );  
 #else
   if(ret!=0) {
     fp1.open(infile.c_str(), ios::out);
@@ -1010,12 +1035,15 @@ void SETUP_FILE_STREAMS()
     ferr.open ( errfile.c_str(), ios:: out  );
   }
 #endif
-
+  fp2.open(sdefile.c_str(), ios::out);
+  
+  
   
 #if saveconfig
   fp2.open  ( (dir+"CONFIG/init"+convertInt(Lx)+"x"+convertInt(Ly)+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta)).c_str(), ios:: out );
   assert(fp2!=NULL);
 #endif
+  
   
   assert(ferr!=NULL);
   assert(fp1!=NULL);

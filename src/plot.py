@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 
 
-for L in (8,8):
+for L in (16,16):
     if(L==8):
         col='r'
     else:

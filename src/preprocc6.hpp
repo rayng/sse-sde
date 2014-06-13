@@ -26,11 +26,14 @@
 // ----------------------------------------------------------
 // ----------------------------------------------------------
 #define loadfield 0
-#define FS 1
+#define FS 0
 #define bounceA 1  // This is the old way of calculating bounce weights
 #define saveconfig 0
 #define append 0
 #define parityinclusion 1
+#define measureobs 0   // Don't need to measure things here. 
+#define sdeevolve 1
+
 //#define WUsweeps 5000
 //#define Nbins 50
 //#define MCsweeps 100
@@ -38,16 +41,16 @@
 
 #define system "uniform"
 #define Lx 16  /***/
-#define Ly 16 /***/
+#define Ly 1 /***/
 #define Lz 1  
-#define d 2
+#define d 1
 
 // These are the key parameters
 #define no_real 50000        /***/
 #define nsteps 16             /***/
 #define Np 1                /***/
-#define hbi (1.35 /(2.*d))
-#define hbf (1.575 /(2.*d))    
+#define hbi (0.25 /(2.*d))
+#define hbf (0.75 /(2.*d))    
 #define dh  ((hbf- hbi) / nsteps )
 //#define dh  (0.25 / (2.*d) )
 
@@ -90,6 +93,13 @@ int  M3 =  nV*6 + nV*4;    // Number of '=' constraints
 REAL R;
 
 
+// ------------------------------
+// Real time evolution 
+// ------------------------------
+#define nT 200
+#define dt 0.05
+#define T (nT*dt)
+#define ntrajs 100
 
 
 // ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

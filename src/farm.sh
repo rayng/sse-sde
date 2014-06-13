@@ -1,8 +1,8 @@
 
 make -f MakefileSerial
 L=16
-#folder="../data/"$L"x1/"
-folder="../data/"$L"x"$L"/"
+folder="../data/"$L"x1/"
+#folder="../data/"$L"x"$L"/"
 mkdir $folder
 mkdir $folder"DIST"
 mkdir $folder"ERR"
@@ -10,9 +10,10 @@ mkdir $folder"PLOTS"
 mkdir $folder"ANIM"
 mkdir $folder"OUT"
 mkdir $folder"CONFIG"
+mkdir $folder"SDE"
 
 # {14..18}}
-for i in {0..15}    #field: nsteps goes in here           
+for i in {0..1}    #field: nsteps goes in here           
 #for i in 0
 do 
     for b in 0   # processor 
