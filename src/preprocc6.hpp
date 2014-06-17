@@ -50,7 +50,7 @@
 #define nsteps 16             /***/
 #define Np 1                /***/
 #define hbi (0.25 /(2.*d))
-#define hbf (0.75 /(2.*d))    
+#define hbf (0.5 /(2.*d))    
 #define dh  ((hbf- hbi) / nsteps )
 //#define dh  (0.25 / (2.*d) )
 
@@ -67,7 +67,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 500
+#define samples 1
 
 // ------------------------
 // Simplex parameters
@@ -96,10 +96,10 @@ REAL R;
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 200
-#define dt 0.05
+#define nT 10000
+#define dt 0.001
 #define T (nT*dt)
-#define ntrajs 100
+
 
 
 // ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

@@ -94,19 +94,17 @@ int main(int argc, char* argv[])
 #endif
 	
 #if(sdeevolve)
-	for(s=0; s< ntrajs; s++)
+	alpha.init_traj();
+	for(t=0; t<nT; t++)
 	  {
-	    alpha.init_traj();
-	    
-	    for(t=0; t<nT; t++)
-	      {
-		alpha.traj.evolve();
-		alpha.traj.write_variables(fp2,t);
-	      }
-	    
+	    if(t!=0)
+	      alpha.traj.evolve();
+	    alpha.traj.write_variables(fp2,t);
+	    fp2<<endl;
 	  }
+	
 #endif
-      }
+      }  // every sample is a trajectory
     
 #if(measureobs)
     obs.average(samples);

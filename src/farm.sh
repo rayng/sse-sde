@@ -13,7 +13,7 @@ mkdir $folder"CONFIG"
 mkdir $folder"SDE"
 
 # {14..18}}
-for i in {0..1}    #field: nsteps goes in here           
+for i in 0    #field: nsteps goes in here           
 #for i in 0
 do 
     for b in 0   # processor 

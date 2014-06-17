@@ -29,6 +29,9 @@ public:
   void write_to_file(ofstream& fp);
   void free_arrays();
   
+  trajectory traj;
+  void init_traj();
+  
   // default constructor
   lattice() {   
     XPS.zero();
@@ -45,6 +48,35 @@ public:
   }
   
 };
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::init_traj()
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  int i;
+  for(i=0; i<N; i++)
+    {
+      if(spin[i]==1)
+	{
+	  traj.z[i].real()=5.;
+	  traj.z[i].imag()=0.;
+	  traj.zp[i]=conj(traj.z[i]);
+	}
+      else if(spin[i]==-1)
+	{
+	  traj.z[i]=-5.;
+	  traj.z[i].imag()=0.;
+	  traj.zp[i]=conj(traj.z[i]);
+	}
+    }
+
+}
+
+
+
+
+
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 void lattice::init_config(string state)
@@ -709,14 +741,13 @@ void lattice::measure()
 	      else if( spin[bsite[1][b]]==1)
 		Nym++;	      
 	    }
-	  
+	
 #if(parityinclusion)
 	  if(parity==1)
 	    nhopparp++;
 	  else
 	    nhopparm++;
 #endif
-
 	  nhoptemp++;   // ignoring parity hopping terms
 	  
 #if(FS)
@@ -726,7 +757,7 @@ void lattice::measure()
 	}
       else  // non-trivial diagonal operators
 	{
-
+	  
 #if(parityinclusion)	  
 	  if(parity==1)
 	    ndisparp++;
@@ -738,16 +769,18 @@ void lattice::measure()
 	}
       stagtemp+=am;
     }
+
   
+  assert(nn==nH);
+    
   windnumx = (Nxp-Nxm)/ (double) Lx;
   windnumy = (Nyp-Nym)/ (double) Ly;
   
 #if FS
   Nhist.resize(nH);
   Nhist.setZero();
-  int m, l;
+  long int m, l;
   // Build histogram.
-  //#pragma omp parallel for private(j,m) shared(N_histogram)
   for (i=0; i<posn.size(); i++) {
     for (j=0; j<posn.size(); j++) 
       if(i!=j)	{
@@ -764,20 +797,22 @@ void lattice::measure()
   }
   
   //Calculate histogram dependent sum
-  double fs=0., X1=0., Amn=0.;
-  int p_,q,r;
+  long double fs=0., X1=0., Amn=0.;
+  long int p_,q,r;
   for(m=0; m<=nH-2; m++) {
     p_= m+1;
     q = nH-m-2;
     r = p_+q+1;
     X1 = ( (q-p_) ) / ( sqrt(r) ) ; 
-    Amn = 0.5*(1.+erff( X1/sqrt(2.)))*(double) p_/ (double) r;
+    Amn = 0.5*(1.+erf( X1/sqrt(2.)))*(double) p_/ (double) r;
     fs += Amn*Nhist[m];
   }
-  //AmnNm  += fs/(hh*hh);
-
+  
+  fs/=(hh*hh);
+  
+  
 #endif
-
+  
 
   // ++++++++++++++++++++++++++++++++++++++++++++++++
   // Accumulate the sum of averages
@@ -802,24 +837,37 @@ void lattice::measure()
   // With parity distinction
   // + sector
 #if(parityinclusion)
-  XPS.dump( (long double) ndisparp, 13 );                      // Number disorder +
-  XPS.dump( (long double) (ndisparp*ndisparp) , 14 );          // 
-  // - sector
-  XPS.dump( (long double) ndisparm, 15 );                      // Number disorder +
-  XPS.dump( (long double) (ndisparm*ndisparm) , 16 );          // 
-  // + sector
-  XPS.dump( (long double) nhopparp, 17 );                      // Number hop +
-  XPS.dump( (long double) (nhopparp*nhopparp) , 18 );          // 
-  // - sector
-  XPS.dump( (long double) nhopparm, 19 );                      // Number hop - 
-  XPS.dump( (long double) (nhopparm*nhopparm) , 20 );          //
+
+  if(parity==1)
+    {
+      XPS.dump( (long double) ndisparp, 13 );                      // Number disorder +
+      XPS.dump( (long double) (ndisparp*ndisparp) , 14 );          // 
+      
+      // + sector
+      XPS.dump( (long double) nhopparp, 17 );                      // Number hop +
+      XPS.dump( (long double) (nhopparp*nhopparp) , 18 );          // 
+    }
+  else if(parity==-1) 
+    {
+      // - sector
+      XPS.dump( (long double) ndisparm, 15 );                      // Number disorder +
+      XPS.dump( (long double) (ndisparm*ndisparm) , 16 );          // 
+      
+      // - sector
+      XPS.dump( (long double) nhopparm, 19 );                      // Number hop - 
+      XPS.dump( (long double) (nhopparm*nhopparm) , 20 );          //
+    }
+
+#endif
+
+#if(FS)
+  XPS.dump(fs,21);                                   //    0 fs
+  if(parity==1)
+    XPS.dump(fs,22);                                 //   +1 fs
+  else if(parity==-1)
+    XPS.dump(fs,23);                                 //   -1 fs
 #endif
   
-#if FS
-  XPS.dump( fs/(hh*hh), 21);                              // Number hopping^2
-#endif  
-  
-    
 }
 
 
@@ -833,9 +881,8 @@ void lattice::write_to_file(ofstream& fp)
   for(int b=0; b<Nb; b++)
     deltaE += epsilonn[b] + hb;
   deltaE=deltaE/ Nb;
-
   
-  for (i=0; i<nobs-1; i++)  // ignore the fidelity susceptibility- 13 observables
+  for (i=0; i<nobs; i++)  // ignore the fidelity susceptibility- 13 observables
     if (i==1)
       fp << setprecision(15) << -XPS.obs[i]/(beta*Nb) + deltaE << " " ;
     else 
@@ -856,3 +903,4 @@ void lattice::free_arrays()
   delete vb;
   delete linklist;
 }
+
