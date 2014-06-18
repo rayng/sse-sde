@@ -67,7 +67,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 1
+#define samples 50
 
 // ------------------------
 // Simplex parameters
@@ -96,7 +96,7 @@ REAL R;
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 10000
+#define nT 20000
 #define dt 0.001
 #define T (nT*dt)
 

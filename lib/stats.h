@@ -121,23 +121,24 @@ class trajectory
 void trajectory::evolve()  // evolves variables forward by dt
 {
   int i,l,m, t, nIter=3;
-  complex<double> R[N], c[N], Tn[N], s[N], cp[N], sp[N], zm[N], zmp[N];
+  complex<double> R[N], c[N], Tn[N], s[N], cp[N], sp[N], zm[N], zmp[N], Rm[N];
   complex<double> drift=0., driftpr=0., strat=0., stratpr=0., field=0., fieldpr=0.;
   complex<double> I (0,1.);
   double hh=2.*d*hb;
   
-  
   for(i=0;i<N;i++)
     {
       R[i]   = 0.5*(z[i]+zp[i]);
+      Rm[i] = R[i];
+      zm[i]  = z[i];  
+      zmp[i] = zp[i];
       Tn[i]  = tanh(R[i]);
       s[i]   = sinh(z[i]); 
       sp[i]  = sinh(zp[i]);
       c[i]   = cosh(z[i]); 
       cp[i]  = cosh(zp[i]);
-      zm[i]  = z[i];  
-      zmp[i] = zp[i];
     }
+  
   
   
   // Iterate for mid point value
@@ -185,29 +186,31 @@ void trajectory::evolve()  // evolves variables forward by dt
   
   for(i=0;i<N;i++)
     {
-      l=i-1; m=i+1;
+      l=i-1; 
+      m=i+1;
       
-      if(l<0) l=N;
-      if(m>=N) m=0;
+      if(l<0) 
+	l=N-1;
+      if(m>=N) 
+	m=0;
       
-      /*
-	drift= -0.5*I*s[i]*( c[m] - s[m]*Tn[m] + c[l] - s[l]*Tn[l] );
-	driftpr= 0.5*I*sp[i]*( cp[m] - sp[m]*Tn[m] + cp[l] - sp[l]*Tn[l] );
-	
-	strat = 0.25*I*s[i]*( c[m] + c[l]);
-	stratpr = -0.25*I*sp[i]*( cp[m] + cp[l]);
-	
-	strat=0.; stratpr=0.;
-      */
+      drift= -0.5*I*s[i]*( c[m]  - s[m]*Tn[m] + c[l] - s[l]*Tn[l] );
+      driftpr= 0.5*I*sp[i]*( cp[m] - sp[m]*Tn[m] + cp[l] - sp[l]*Tn[l] );
       
-      //drift = -0.5*I*sinh(z[i])* ( cosh(z[m]) - sinh(z[m])*tanh(R[m]) + cosh(z[l]) - sinh(z[l])*tanh(R[l]) );
-      //driftpr = 0.5*I*sinh(zp[i])*( cosh(zp[m]) - sinh(zp[m])*tanh(R[m]) + cosh(zp[l]) - sinh(zp[l])*tanh(R[l]) );
+      //strat = 0.25*I*sinh(z[i])*(cosh(z[i]) + cosh(z[i]));
+      //stratpr = -0.25*I*sinh(zp[i])*(cosh(zp[i]) + cosh(zp[i]));
+      //strat = 0.25*I*s[i]* (c[l] + c[m]);
+      //stratpr = -0.25*I*sp[i]* (cp[l] + cp[m]);
       
-      field = I*hh*sinh(z[i]);
-      fieldpr = -I*hh*sinh(zp[i]);
+      //strat=0.; stratpr=0.;
       
-      z[i] = z[i] + (drift*dt + strat + field*dt);
-      zp[i] = zp[i] + (driftpr*dt + stratpr + fieldpr*dt);
+      //field = I*hh*sinh(z[i]);
+      //fieldpr = -I*hh*sinh(zp[i]);
+      field=I*hh;
+      fieldpr=-I*hh;
+      
+      z[i] = zm[i] + (drift*dt + strat*dt + field*dt);
+      zp[i] = zmp[i] + (driftpr*dt + stratpr*dt + fieldpr*dt);
       
     }
   

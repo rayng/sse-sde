@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 out=np.loadtxt("../data/16x1/SDE/SDE-TIM-h0p0beta0", dtype=np.str)
 
 i=iter(out)
-nT=10000
+nT=20000
 nV=16
 nn=2*2*16+1
-Nsamples=1
+Nsamples=50
 
 trj1= np.shape(list(it.islice(i,0,nT)))
 
@@ -82,15 +82,33 @@ Sx=Sx/Nsamples
 
 #print Sz
 
-#for i in np.arange(0,nV):
-    #plt.plot(zav[0], Sx[i].real, label="site "+str(i) )
+"""
+for i in np.arange(0,nV):
+    plt.plot(zav[0], Sx[i].real, label="site "+str(i) )
+plt.legend(loc='best')
+plt.savefig('Sx-sites.png')
+plt.show()
+
+for i in np.arange(0,nV):
+    plt.plot(zav[0], Sy[i].real, label="site "+str(i) )
+plt.legend(loc='best')
+plt.savefig('Sy-sites.png')
+plt.show()
+
+
+for i in np.arange(0,nV):
+    plt.plot(zav[0], Sx[i].real, label="site "+str(i) )
+plt.legend(loc='best')
+plt.savefig('Sz-sites.png')
+plt.show()
+"""
+
     #plt.plot(zav[0], Sy[i].real, label="site "+str(i) )
     #plt.plot(zav[0], Sz[i].real, label="site "+str(i) )
     
     #plt.plot(zav[0], Sx[i].real, 'b')
     #plt.plot(zav[0], Sy[i].real, 'g')
-#plt.legend(loc='best')
-#plt.show()
+
 
 
 # Lattice averaged
