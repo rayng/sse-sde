@@ -122,12 +122,14 @@ void trajectory::evolve()  // evolves variables forward by dt
 {
   int i,l,m, t, nIter=3;
   complex<double> R[N], c[N], Tn[N], s[N], cp[N], sp[N], zm[N], zmp[N], Rm[N];
-  complex<double> drift=0., driftpr=0., strat=0., stratpr=0., field=0., fieldpr=0.;
+  complex<double> eta[N], zeta[N];
+  complex<double> drift=0., driftpr=0., strat=0., stratpr=0., field=0., fieldpr=0., noise, noisepr;
   complex<double> I (0,1.);
   double hh=2.*d*hb;
   
   for(i=0;i<N;i++)
     {
+      // expensive functions
       R[i]   = 0.5*(z[i]+zp[i]);
       Rm[i] = R[i];
       zm[i]  = z[i];  
@@ -137,52 +139,64 @@ void trajectory::evolve()  // evolves variables forward by dt
       sp[i]  = sinh(zp[i]);
       c[i]   = cosh(z[i]); 
       cp[i]  = cosh(zp[i]);
+      
+      // Noise terms:
+      eta[i].real() = 1./(sqrt(dt))*normdist(r);
+      eta[i].imag() = 1./(sqrt(dt))*normdist(r);
+      zeta[i].real() = 1./(sqrt(dt))*normdist(r);
+      zeta[i].imag() = 1./(sqrt(dt))*normdist(r);
     }
   
   
-  
   // Iterate for mid point value
-  /*
-    for(t=0;t<nIter;t++)  
+  for(t=0;t<nIter;t++)  
     {
-    for(i=0;i<N;i++)
-    {
-    l=i-1; m=i+1;
-    
-    if(l<0) l=N;
+      for(i=0;i<N;i++)
+	{
+	  l=i-1; 
+	  m=i+1;
+	  
+	  if(l<0) l=N-1;
 	  if(m>=N) m=0;
 	  
+
+	  // SxiSxj
+#if(polar_x)
 	  drift= -0.5*I*s[i]*( c[m] - s[m]*Tn[m] + c[l] - s[l]*Tn[l] );
 	  driftpr= 0.5*I*sp[i]*( cp[m] - sp[m]*Tn[m] + cp[l] - sp[l]*Tn[l] );
-	  
-	  strat = 0.25*I*s[i]*( c[m] + c[l]);
-	  stratpr = -0.25*I*sp[i]*( cp[m] + cp[l]);
-	  
-	  //strat=0.; stratpr=0.;
-	  
+	  noise=sqrt(s[i]*s[m])*conj(eta[i])  + sqrt(s[i]*s[l])*(eta[l]); 
+	  noisepr=sqrt(sp[i]*sp[m])*conj(zeta[i])  + sqrt(sp[i]*sp[l])*(zeta[l]); 
+	  strat=0.; stratpr=0.;
 	  field = I*hh;
 	  fieldpr = -I*hh;
+#endif
+
+
+#if(polar_z)
+	  drift= 0.5*I*(Tn[m] + Tn[l]);
+	  driftpr= -0.5*I*(Tn[m] + Tn[l]);
+	  noise=eta[i]  + I*conj(eta[l]);
+	  noisepr=zeta[i]  - I*conj(zeta[l]);
+	  //field = I*hh*sinh(z[i]);
+	  //fieldpr = -I*hh*sinh(zp[i]);
+#endif
 	  
-	  zm[i] = z[i] + (drift + strat + field)*0.5*dt;
-	  zmp[i] = zp[i] + (driftpr + stratpr + fieldpr)*0.5*dt;
+	  zm[i] = z[i] + (drift + strat + field  + noise)*0.5*dt;
+	  zmp[i] = zp[i] + (driftpr + stratpr + fieldpr + noisepr )*0.5*dt;
 	  
 	}
       
-      //update:
-      
+      //update using zm, zmp values
       for(i=0; i<N; i++)
 	{
 	  R[i] = 0.5*(zm[i]+zmp[i]);
 	  Tn[i] = tanh(R[i]);
-	  
 	  s[i] = sinh(zm[i]);
 	  c[i] = cosh(zm[i]);
-	  
 	  cp[i] = cosh(zmp[i]);
 	  sp[i] = sinh(zmp[i]);
 	}
-	}
-  */
+    }
   
   for(i=0;i<N;i++)
     {
@@ -194,23 +208,32 @@ void trajectory::evolve()  // evolves variables forward by dt
       if(m>=N) 
 	m=0;
       
+#if(polar_x)
       drift= -0.5*I*s[i]*( c[m]  - s[m]*Tn[m] + c[l] - s[l]*Tn[l] );
       driftpr= 0.5*I*sp[i]*( cp[m] - sp[m]*Tn[m] + cp[l] - sp[l]*Tn[l] );
-      
       //strat = 0.25*I*sinh(z[i])*(cosh(z[i]) + cosh(z[i]));
       //stratpr = -0.25*I*sinh(zp[i])*(cosh(zp[i]) + cosh(zp[i]));
       //strat = 0.25*I*s[i]* (c[l] + c[m]);
       //stratpr = -0.25*I*sp[i]* (cp[l] + cp[m]);
-      
-      //strat=0.; stratpr=0.;
-      
-      //field = I*hh*sinh(z[i]);
-      //fieldpr = -I*hh*sinh(zp[i]);
+      strat=0.; stratpr=0.;
+      noise=sqrt(s[i]*s[m])*conj(eta[i])  + sqrt(s[i]*s[l])*(eta[l]); 
+      noisepr=sqrt(sp[i]*sp[m])*conj(zeta[i])  + sqrt(sp[i]*sp[l])*(zeta[l]); 
       field=I*hh;
       fieldpr=-I*hh;
+#endif
       
-      z[i] = zm[i] + (drift*dt + strat*dt + field*dt);
-      zp[i] = zmp[i] + (driftpr*dt + stratpr*dt + fieldpr*dt);
+#if(polar_z)
+      drift= 0.5*I*(Tn[m] + Tn[l]);
+      driftpr= -0.5*I*(Tn[m] + Tn[l]);
+      noise=eta[i]  + I*conj(eta[l]);
+      noisepr=zeta[i]  - I*conj(zeta[l]);
+      //field = I*hh*sinh(z[i]);
+      //fieldpr = -I*hh*sinh(zp[i]);
+#endif
+      
+      
+      z[i] = z[i] + (drift + strat + field  + noise)*dt;
+      zp[i] = zp[i] + (driftpr + stratpr + fieldpr + noisepr )*dt;
       
     }
   

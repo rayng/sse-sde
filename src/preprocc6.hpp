@@ -33,6 +33,8 @@
 #define parityinclusion 1
 #define measureobs 0   // Don't need to measure things here. 
 #define sdeevolve 1
+#define polar_x 0
+#define polar_z 1
 
 //#define WUsweeps 5000
 //#define Nbins 50
@@ -67,7 +69,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 50
+#define samples 100
 
 // ------------------------
 // Simplex parameters
@@ -96,7 +98,7 @@ REAL R;
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 20000
+#define nT 5000
 #define dt 0.001
 #define T (nT*dt)
 
@@ -114,7 +116,7 @@ using namespace std;
 using namespace Eigen;
 
 RandomLib::Random r;
-
+RandomLib::NormalDistribution<double> normdist; 
 
 // ------------------------
 // Variable sized arrays

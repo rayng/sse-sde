@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 out=np.loadtxt("../data/16x1/SDE/SDE-TIM-h0p0beta0", dtype=np.str)
 
 i=iter(out)
-nT=20000
+nT=5000
 nV=16
 nn=2*2*16+1
-Nsamples=50
+Nsamples=100
 
 trj1= np.shape(list(it.islice(i,0,nT)))
 
@@ -112,9 +112,9 @@ plt.show()
 
 
 # Lattice averaged
-plt.plot( zav[0], np.mean(Sx, axis=0), 'ro-' , markevery=200,label=r'$\langle S_x \rangle$' )
-plt.plot( zav[0], np.mean(Sy, axis=0),  'bo-', markevery=200, label=r'$\langle S_y \rangle$' )
-plt.plot( zav[0], np.mean(Sz, axis=0), 'yo-', markevery=200, label=r'$\langle S_z \rangle$' )
+plt.plot( zav[0], np.mean(Sx, axis=0), 'r--' , markevery=200,label=r'$\langle S_x \rangle$' )
+plt.plot( zav[0], np.mean(Sy, axis=0),  'b--', markevery=200, label=r'$\langle S_y \rangle$' )
+plt.plot( zav[0], np.mean(Sz, axis=0), 'y--', markevery=200, label=r'$\langle S_z \rangle$' )
 plt.title(str(Nsamples)+' samples')
 plt.savefig('../figs/'+str(Nsamples)+'samples-exactdrift.png')
 plt.legend(loc='best')
