@@ -92,7 +92,6 @@ int main(int argc, char* argv[])
 	obs+=alpha.XPS;  // dump a bin
 	alpha.XPS.zero();
 #endif
-	
 #if(sdeevolve)
 	alpha.init_traj();
 	for(t=0; t<nT; t++)
@@ -1015,7 +1014,6 @@ void SETUP_FILE_STREAMS()
   int ret=-1;
   struct stat buff;
   ret=stat(infile.c_str(), &buff );
-  
   // This will test if the file exists..
   // If it does not then create it and start fresh. 
 
@@ -1033,8 +1031,10 @@ void SETUP_FILE_STREAMS()
     ferr.open ( errfile.c_str(), ios:: out  );
   }
 #endif
-  fp2.open(sdefile.c_str(), ios::out);
   
+  fp2.open(sdefile.c_str(), ios::out);
+  if(fp2==NULL)
+    cout << "Cannot open SDE file" <<endl;
   
   
 #if saveconfig

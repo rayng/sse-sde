@@ -5,17 +5,14 @@ import matplotlib.pyplot as plt
 out=np.loadtxt("../data/16x1/SDE/SDE-TIM-h0p0beta0", dtype=np.str)
 
 i=iter(out)
-nT=5000
+nT=15000
 nV=16
-nn=2*2*16+1
-Nsamples=100
+nn=2*2*nV+1
+Nsamples=1
 
 trj1= np.shape(list(it.islice(i,0,nT)))
 
-
-#zav=np.zeros(shape=(nn,nT))
 zav=np.zeros(shape=(nn,nT))
-
 Sz = np.zeros(shape=(nV,nT),dtype=np.complex_)
 Sy = np.zeros(shape=(nV,nT),dtype=np.complex_)
 Sx = np.zeros(shape=(nV,nT),dtype=np.complex_)
@@ -32,14 +29,13 @@ with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
         out = np.genfromtxt(it.islice(t_in, nT))
         #print np.shape(out)
         out2=np.transpose(out)
-        print np.shape(out2)
+        #print np.shape(out2)
         
         for i in np.arange(0,nV):
             zcmp[i]=out2[4*i+1] + 1j*out2[4*i+2]
             zcmppr[i]=out2[4*i+3] + 1j*out2[4*i+4]
 
         #print np.shape(zcmp)
-
         
         R = (zcmp+zcmppr)*0.5
         
@@ -56,13 +52,17 @@ with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
         
         #look at variable 0#
         #plt.plot(out2[0], out2[4*i+1],'ro-')
-         #plt.plot(out2[0], out2[4*i+2], 'bo-')
-              #plt.plot(out2[4*i+1], out2[4*i+2], 'bo-')
+        #plt.plot(out2[0], out2[4*i+2], 'bo-')
+        for i in np.arange(0,nV):
+            plt.plot(out2[4*i+1], out2[4*i+2])
+            plt.plot(out2[4*i+3], out2[4*i+4])
 #plt.plot(out2[0], out2[4*i+3],'ro-')
     #plt.plot(out2[0], out2[4*i+4], 'bo-')
-    #plt.show()
+    plt.xlim(-15,15)
+    plt.legend(loc='best')
+    plt.show()
     
-        zav = zav+ out2
+    zav = zav+ out2
 
 
     
@@ -112,11 +112,12 @@ plt.show()
 
 
 # Lattice averaged
-plt.plot( zav[0], np.mean(Sx, axis=0), 'r--' , markevery=200,label=r'$\langle S_x \rangle$' )
-plt.plot( zav[0], np.mean(Sy, axis=0),  'b--', markevery=200, label=r'$\langle S_y \rangle$' )
-plt.plot( zav[0], np.mean(Sz, axis=0), 'y--', markevery=200, label=r'$\langle S_z \rangle$' )
+plt.clf()
+plt.plot( zav[0], np.mean(Sx, axis=0), 'r--' , markevery=1,label=r'$\langle S_x \rangle$' )
+plt.plot( zav[0], np.mean(Sy, axis=0),  'b--', markevery=1, label=r'$\langle S_y \rangle$' )
+plt.plot( zav[0], np.mean(Sz, axis=0), 'y--', markevery=1, label=r'$\langle S_z \rangle$' )
 plt.title(str(Nsamples)+' samples')
-plt.savefig('../figs/'+str(Nsamples)+'samples-exactdrift.png')
+plt.savefig('../figs/'+str(Nsamples)+'samples-polar-x.png')
 plt.legend(loc='best')
 
 plt.show()

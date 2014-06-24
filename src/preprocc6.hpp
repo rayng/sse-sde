@@ -33,14 +33,18 @@
 #define parityinclusion 1
 #define measureobs 0   // Don't need to measure things here. 
 #define sdeevolve 1
+#define driftterms 1
+#define noiseterms 0
+#define stratterms 1
+#define fieldterms 1
+
 #define polar_x 0
-#define polar_z 1
+#define polar_z 0
+#define XYmodel 1
 
 //#define WUsweeps 5000
 //#define Nbins 50
 //#define MCsweeps 100
-
-
 #define system "uniform"
 #define Lx 16  /***/
 #define Ly 1 /***/
@@ -69,7 +73,7 @@
 #define nmax 10
 #define Ne 128
 #define Nm (2*Ne)
-#define samples 100
+#define samples 1
 
 // ------------------------
 // Simplex parameters
@@ -98,10 +102,9 @@ REAL R;
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 5000
+#define nT 15000
 #define dt 0.001
 #define T (nT*dt)
-
 
 
 // ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

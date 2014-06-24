@@ -121,7 +121,8 @@ class trajectory
 void trajectory::evolve()  // evolves variables forward by dt
 {
   int i,l,m, t, nIter=3;
-  complex<double> R[N], c[N], Tn[N], s[N], cp[N], sp[N], zm[N], zmp[N], Rm[N];
+  complex<double> R[N], c[N], Tn[N], s[N], cp[N], sp[N], zm[N], zmp[N], Rm[N]; 
+  complex<double> sdiffp[N], sdiffm[N], cdiffp[N], cdiffm[N], sdiffppr[N], sdiffmpr[N], cdiffppr[N], cdiffmpr[N] ;
   complex<double> eta[N], zeta[N];
   complex<double> drift=0., driftpr=0., strat=0., stratpr=0., field=0., fieldpr=0., noise, noisepr;
   complex<double> I (0,1.);
@@ -140,6 +141,25 @@ void trajectory::evolve()  // evolves variables forward by dt
       c[i]   = cosh(z[i]); 
       cp[i]  = cosh(zp[i]);
       
+      m=i+1;
+      l=i-1;
+      
+      if(m>=N)
+	m=0;
+      if(l<0)
+	l=N-1;
+      
+      // For XY Hamiltonian
+      sdiffp[i] = sinh(z[i] - z[m]);
+      sdiffm[i] = sinh(z[i] - z[l]);
+      cdiffp[i] = cosh(z[i] - z[m]);
+      cdiffm[i] = cosh(z[i] - z[l]);
+
+      sdiffppr[i] = sinh(zp[i] - zp[m]);
+      sdiffmpr[i] = sinh(zp[i] - zp[l]);
+      cdiffppr[i] = cosh(zp[i] - zp[m]);
+      cdiffmpr[i] = cosh(zp[i] - zp[l]);
+      
       // Noise terms:
       eta[i].real() = 1./(sqrt(dt))*normdist(r);
       eta[i].imag() = 1./(sqrt(dt))*normdist(r);
@@ -147,45 +167,96 @@ void trajectory::evolve()  // evolves variables forward by dt
       zeta[i].imag() = 1./(sqrt(dt))*normdist(r);
     }
   
-  
   // Iterate for mid point value
   for(t=0;t<nIter;t++)  
     {
       for(i=0;i<N;i++)
 	{
-	  l=i-1; 
-	  m=i+1;
+	  l=i-1;  m=i+1;
 	  
-	  if(l<0) l=N-1;
-	  if(m>=N) m=0;
+	  if(l<0)
+	    l=N-1;
+	  if(m>=N) 
+	    m=0;
 	  
 
-	  // SxiSxj
+	  // ---------------------
+	  // SxiSxj  hamiltonian
+	  // ---------------------
 #if(polar_x)
+
+#if (driftterms)
 	  drift= -0.5*I*s[i]*( c[m] - s[m]*Tn[m] + c[l] - s[l]*Tn[l] );
 	  driftpr= 0.5*I*sp[i]*( cp[m] - sp[m]*Tn[m] + cp[l] - sp[l]*Tn[l] );
+#endif
+
+#if (noiseterms)	  
 	  noise=sqrt(s[i]*s[m])*conj(eta[i])  + sqrt(s[i]*s[l])*(eta[l]); 
 	  noisepr=sqrt(sp[i]*sp[m])*conj(zeta[i])  + sqrt(sp[i]*sp[l])*(zeta[l]); 
-	  strat=0.; stratpr=0.;
+	  
+#endif
+
+#if(stratterms)
+	  strat = 0.25*I*s[i]* (c[l] + c[m]);
+	  stratpr = -0.25*I*sp[i]* (cp[l] + cp[m]);
+#endif
+
+#if (fieldterms)	  
 	  field = I*hh;
 	  fieldpr = -I*hh;
 #endif
 
+#endif
 
+	  // ---------------------
+	  // SziSzj  hamiltonian
+	  // ---------------------
 #if(polar_z)
+	  
+#if (driftterms)
 	  drift= 0.5*I*(Tn[m] + Tn[l]);
 	  driftpr= -0.5*I*(Tn[m] + Tn[l]);
+#endif
+
+#if (noiseterms)
 	  noise=eta[i]  + I*conj(eta[l]);
 	  noisepr=zeta[i]  - I*conj(zeta[l]);
-	  //field = I*hh*sinh(z[i]);
-	  //fieldpr = -I*hh*sinh(zp[i]);
+#endif	  
+
+#if(fieldterms)
+	  field = I*hh*sinh(z[i]);
+	  fieldpr = -I*hh*sinh(zp[i]);
 #endif
 	  
+#endif
+
+	  // ---------------------------
+	  // XY model  hamiltonian
+	  // ---------------------------
+
+#if(XYmodel)
+	  
+#if (driftterms)
+	  drift= -I*0.5*( sdiffp[i] + cdiffp[i]*Tn[m]  + sdiffm[i] + cdiffm[i]*Tn[l] ) ;  //p=plus, m=minus
+	  driftpr=  -I*0.5*( sdiffppr[i] + cdiffppr[i]*Tn[m]  + sdiffmpr[i] + cdiffmpr[i]*Tn[l] ) ;  //p=plus, m=minus
+
+#endif
+	  
+#if(noiseterms)
+	  noise= sqrt(cdiffp[i]/2.)*conj(eta[i]) - I* sqrt(cdiffm[i]/2.)*eta[l];
+	  noisepr= sqrt(cdiffppr[i]/2.)*conj(zeta[i]) - I* sqrt(cdiffmpr[i]/2.)*zeta[l];
+#endif	  
+	  
+#if(fieldterms)
+	  field = 0.;
+	  fieldpr = 0.;
+#endif
+	  
+#endif	  
 	  zm[i] = z[i] + (drift + strat + field  + noise)*0.5*dt;
 	  zmp[i] = zp[i] + (driftpr + stratpr + fieldpr + noisepr )*0.5*dt;
 	  
 	}
-      
       //update using zm, zmp values
       for(i=0; i<N; i++)
 	{
@@ -195,9 +266,29 @@ void trajectory::evolve()  // evolves variables forward by dt
 	  c[i] = cosh(zm[i]);
 	  cp[i] = cosh(zmp[i]);
 	  sp[i] = sinh(zmp[i]);
+	  
+	  m=i+1;
+	  l=i-1;
+	  
+	  if(m>=N)
+	    m=0;
+	  if(l<0)
+	    l=N-1;
+	  
+	  // For XY Hamiltonian
+	  sdiffp[i] = sinh(zm[i] - zm[m]);
+	  sdiffm[i] = sinh(zm[i] - zm[l]);
+	  cdiffp[i] = cosh(zm[i] - zm[m]);
+	  cdiffm[i] = cosh(zm[i] - zm[l]);
+	  
+	  sdiffppr[i] = sinh(zmp[i] - zmp[m]);
+	  sdiffmpr[i] = sinh(zmp[i] - zmp[l]);
+	  cdiffppr[i] = cosh(zmp[i] - zmp[m]);
+	  cdiffmpr[i] = cosh(zmp[i] - zmp[l]);
 	}
-    }
-  
+      
+      
+    }      
   for(i=0;i<N;i++)
     {
       l=i-1; 
@@ -209,45 +300,89 @@ void trajectory::evolve()  // evolves variables forward by dt
 	m=0;
       
 #if(polar_x)
+      
+      
+#if (driftterms)
       drift= -0.5*I*s[i]*( c[m]  - s[m]*Tn[m] + c[l] - s[l]*Tn[l] );
       driftpr= 0.5*I*sp[i]*( cp[m] - sp[m]*Tn[m] + cp[l] - sp[l]*Tn[l] );
-      //strat = 0.25*I*sinh(z[i])*(cosh(z[i]) + cosh(z[i]));
-      //stratpr = -0.25*I*sinh(zp[i])*(cosh(zp[i]) + cosh(zp[i]));
-      //strat = 0.25*I*s[i]* (c[l] + c[m]);
-      //stratpr = -0.25*I*sp[i]* (cp[l] + cp[m]);
-      strat=0.; stratpr=0.;
+#endif
+      
+#if (stratterms)      
+      strat = 0.25*I*s[i]* (c[l] + c[m]);
+      stratpr = -0.25*I*sp[i]* (cp[l] + cp[m]);
+#endif
+      
+#if (noiseterms)      
       noise=sqrt(s[i]*s[m])*conj(eta[i])  + sqrt(s[i]*s[l])*(eta[l]); 
       noisepr=sqrt(sp[i]*sp[m])*conj(zeta[i])  + sqrt(sp[i]*sp[l])*(zeta[l]); 
+#endif
+      
+#if (fieldterms)      
       field=I*hh;
       fieldpr=-I*hh;
 #endif
       
-#if(polar_z)
-      drift= 0.5*I*(Tn[m] + Tn[l]);
-      driftpr= -0.5*I*(Tn[m] + Tn[l]);
-      noise=eta[i]  + I*conj(eta[l]);
-      noisepr=zeta[i]  - I*conj(zeta[l]);
-      //field = I*hh*sinh(z[i]);
-      //fieldpr = -I*hh*sinh(zp[i]);
 #endif
       
+#if(polar_z)
+      
+#if (driftterms)
+      drift= 0.5*I*(Tn[m] + Tn[l]);
+      driftpr= -0.5*I*(Tn[m] + Tn[l]);
+#endif
+      
+#if (noiseterms)
+      noise=eta[i]  + I*conj(eta[l]);
+      noisepr=zeta[i]  - I*conj(zeta[l]);
+#endif
+      
+#if(fieldterms)
+      field = I*hh*sinh(z[i]);
+      fieldpr = -I*hh*sinh(zp[i]);
+#endif
+      
+#endif
+      
+      // ---------------------------
+      // SxiSxj+SyiSyj  hamiltonian
+      // ---------------------------
+
+#if(XYmodel)
+      
+      
+#if (driftterms)
+      drift= -I*0.5*( sdiffp[i] + cdiffp[i]*Tn[m]  + sdiffm[i] + cdiffm[i]*Tn[l] ) ;  //p=plus, m=minus
+      driftpr=  I*0.5*( sdiffppr[i] + cdiffppr[i]*Tn[m]  + sdiffmpr[i] + cdiffmpr[i]*Tn[l] ) ;  //p=plus, m=minus
+#endif
+      
+      
+#if(noiseterms)
+      noise= sqrt(cdiffp[i]/2.)*conj(eta[i]) - I* sqrt(cdiffm[i]/2.)*eta[l];
+      noisepr= sqrt(cdiffppr[i]/2.)*conj(zeta[i]) - I* sqrt(cdiffmpr[i]/2.)*zeta[l];
+#endif	  
+      
+#if(fieldterms)
+      field = 0.;
+      fieldpr = 0.;
+#endif
+      
+#endif	  
       
       z[i] = z[i] + (drift + strat + field  + noise)*dt;
       zp[i] = zp[i] + (driftpr + stratpr + fieldpr + noisepr )*dt;
       
     }
   
-  
-  
-  
-  
-  
-}
+}  
 
 
+
+
+  
 void trajectory::write_variables(ofstream& fp, int t)
 {
   int i;
+  
   fp << t*dt  ;
   for(i=0; i<N; i++)
     fp << " " <<  z[i].real()  << " " <<  z[i].imag()  
