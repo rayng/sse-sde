@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 out=np.loadtxt("../data/16x1/SDE/SDE-TIM-h0p0beta0", dtype=np.str)
 
 i=iter(out)
-nT=15000
+nT=16000
 nV=16
 nn=2*2*nV+1
 Nsamples=1
@@ -26,18 +26,22 @@ R = np.zeros(shape=(nV,nT), dtype=np.complex_)
 with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
     
     for ntraj in np.arange(0,Nsamples):
+
         out = np.genfromtxt(it.islice(t_in, nT))
-        #print np.shape(out)
+        print np.shape(out)
         out2=np.transpose(out)
-        #print np.shape(out2)
-        
+        print np.shape(out2)
+
+
+        tarr=out2[0]
         for i in np.arange(0,nV):
             zcmp[i]=out2[4*i+1] + 1j*out2[4*i+2]
             zcmppr[i]=out2[4*i+3] + 1j*out2[4*i+4]
 
         #print np.shape(zcmp)
         
-        R = (zcmp+zcmppr)*0.5
+        R= (zcmp+zcmppr)*0.5
+        S= (zcmp-zcmppr)*(0.5*1j)
         
         Sxtemp=0.5*(np.cosh(zcmp)- np.sinh(zcmp)*np.tanh(R) )
         Sytemp=0.5*1j*(np.sinh(zcmp) - np.cosh(zcmp)*np.tanh(R)  )
@@ -51,22 +55,40 @@ with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
         #plt.plot(out2[0], Sytemp[0].real )
         
         #look at variable 0#
-        #plt.plot(out2[0], out2[4*i+1],'ro-')
-        #plt.plot(out2[0], out2[4*i+2], 'bo-')
+        
+        
         for i in np.arange(0,nV):
-            plt.plot(out2[4*i+1], out2[4*i+2])
-            plt.plot(out2[4*i+3], out2[4*i+4])
-#plt.plot(out2[0], out2[4*i+3],'ro-')
-    #plt.plot(out2[0], out2[4*i+4], 'bo-')
-    plt.xlim(-15,15)
+            """
+            z-variables
+            """
+            #plt.plot(out2[0], out2[4*i+1],'r--')
+            #plt.plot(out2[0], out2[4*i+2], 'b--')
+            #plt.plot(out2[0], out2[4*i+3],'r--')
+            #plt.plot(out2[0], out2[4*i+4], 'b--')
+            """
+            R,S-variables
+            """
+            plt.plot(out2[0], R[i].real,'r--')
+            plt.plot(out2[0], R[i].imag, 'b--')
+            plt.plot(out2[0], S[i].real,'r--')
+            plt.plot(out2[0], S[i].imag, 'b--')
+            
+
+            #plt.show()
+    #plt.xlim(-15,15)
+    
     plt.legend(loc='best')
-    plt.show()
+    
     
     zav = zav+ out2
 
 
     
 #plt.show()
+
+plt.clf()
+plt.plot(tarr, 'ro-');
+plt.show()
 
 zav=zav/Nsamples
 Sz=Sz/Nsamples
@@ -75,12 +97,10 @@ Sx=Sx/Nsamples
 
 
 
+print np.shape(Sx), np.shape(Sy), np.shape(Sz)
 
 # plot some observables
 
-#print Sz
-
-#print Sz
 
 """
 for i in np.arange(0,nV):
@@ -113,9 +133,9 @@ plt.show()
 
 # Lattice averaged
 plt.clf()
-plt.plot( zav[0], np.mean(Sx, axis=0), 'r--' , markevery=1,label=r'$\langle S_x \rangle$' )
-plt.plot( zav[0], np.mean(Sy, axis=0),  'b--', markevery=1, label=r'$\langle S_y \rangle$' )
-plt.plot( zav[0], np.mean(Sz, axis=0), 'y--', markevery=1, label=r'$\langle S_z \rangle$' )
+plt.plot( tarr, np.mean(Sx, axis=0), 'ro-' , markevery=100,markersize=1,label=r'$\langle S_x \rangle$' )
+plt.plot( tarr, np.mean(Sy, axis=0),  'bo-', markevery=100,markersize=1, label=r'$\langle S_y \rangle$' )
+plt.plot( tarr, np.mean(Sz, axis=0), 'yo-', markevery=100, markersize=1,label=r'$\langle S_z \rangle$' )
 plt.title(str(Nsamples)+' samples')
 plt.savefig('../figs/'+str(Nsamples)+'samples-polar-x.png')
 plt.legend(loc='best')

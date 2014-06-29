@@ -31,16 +31,19 @@
 #define saveconfig 0
 #define append 0
 #define parityinclusion 1
+#define timeadaptive 1
 #define measureobs 0   // Don't need to measure things here. 
 #define sdeevolve 1
 #define driftterms 1
-#define noiseterms 0
-#define stratterms 1
+#define noiseterms 1
+#define stratterms 0
 #define fieldterms 1
+#define jumptol 0.08
+
 
 #define polar_x 0
-#define polar_z 0
-#define XYmodel 1
+#define polar_z 1
+#define XYmodel 0
 
 //#define WUsweeps 5000
 //#define Nbins 50
@@ -86,7 +89,7 @@
 
 typedef REAL MAT[MMAX][NMAX];
 
-double beta, T, hb; 
+double beta, hb; 
 
 MAT  A;
 int  IPOSV[MMAX], IZROV[NMAX];
@@ -102,10 +105,11 @@ REAL R;
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 15000
-#define dt 0.001
-#define T (nT*dt)
+#define nT 16000
 
+double dto=0.001, dt=dto;
+double T=(nT*dt);
+double tlast=0.;
 
 // ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 // -------------------------------------------------------------------------------------------

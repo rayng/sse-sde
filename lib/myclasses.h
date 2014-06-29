@@ -6,6 +6,8 @@ class lattice
 {
 
 public:
+
+  //member data
   long int M;                              // imaginary time direction
   long int nH;                             // number of operators
   long int Nl;
@@ -15,8 +17,9 @@ public:
   int *vtx;
   int *vb;
   string init_state;                  // hightemp, FMup, FMdown
-  //double obs[nobs];
   bin XPS;                            // I just called this bin object: XPS
+  
+  // member functions
   void update_spin_config ();
   void diagonal_update();
   void adjust_truncate();
@@ -29,8 +32,11 @@ public:
   void write_to_file(ofstream& fp);
   void free_arrays();
   
+  // stochastic trajectories
   trajectory traj;
   void init_traj();
+  void init_traj_y();
+  
   
   // default constructor
   lattice() {   
@@ -55,6 +61,7 @@ void lattice::init_traj()
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 {
   int i;
+  //If z-variables
   for(i=0; i<N; i++)
     {
       if(spin[i]==1)
@@ -70,7 +77,34 @@ void lattice::init_traj()
 	  traj.zp[i]=conj(traj.z[i]);
 	}
     }
+}
 
+
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::init_traj_y()
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  int i;
+  //If y-variables
+  for(i=0; i<N; i++)
+    {
+      if(spin[i]==1)
+	{
+	  traj.y[i].real()=0.;
+	  traj.y[i].imag()=0.;
+	  traj.yp[i]=conj(traj.z[i]);
+	  traj.SS[i]=1;
+	}
+      else if(spin[i]==-1)
+	{
+	  traj.y[i].real()=0.;
+	  traj.y[i].imag()=0.;
+	  traj.yp[i]=conj(traj.z[i]);
+	  traj.SSp[i]=-1;
+	}
+    }
 }
 
 

@@ -92,14 +92,19 @@ int main(int argc, char* argv[])
 	obs+=alpha.XPS;  // dump a bin
 	alpha.XPS.zero();
 #endif
+
 #if(sdeevolve)
 	alpha.init_traj();
+	
 	for(t=0; t<nT; t++)
 	  {
+	    
 	    if(t!=0)
-	      alpha.traj.evolve();
+	      {
+		alpha.traj.evolve();
+		tlast+=dt;
+	      }
 	    alpha.traj.write_variables(fp2,t);
-	    fp2<<endl;
 	  }
 	
 #endif
