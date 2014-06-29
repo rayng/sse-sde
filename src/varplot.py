@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 out=np.loadtxt("../data/16x1/SDE/SDE-TIM-h0p0beta0", dtype=np.str)
 
 i=iter(out)
-nT=16000
+nT=1000
 nV=16
 nn=2*2*nV+1
 Nsamples=1
@@ -61,20 +61,20 @@ with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
             """
             z-variables
             """
-            #plt.plot(out2[0], out2[4*i+1],'r--')
-            #plt.plot(out2[0], out2[4*i+2], 'b--')
-            #plt.plot(out2[0], out2[4*i+3],'r--')
-            #plt.plot(out2[0], out2[4*i+4], 'b--')
+            plt.plot(out2[0], out2[4*i+1],'r--')
+            plt.plot(out2[0], out2[4*i+2], 'b--')
+            plt.plot(out2[0], out2[4*i+3],'r--')
+            plt.plot(out2[0], out2[4*i+4], 'b--')
             """
             R,S-variables
             """
-            plt.plot(out2[0], R[i].real,'r--')
-            plt.plot(out2[0], R[i].imag, 'b--')
-            plt.plot(out2[0], S[i].real,'r--')
-            plt.plot(out2[0], S[i].imag, 'b--')
+            #plt.plot(out2[0], R[i].real,'r--')
+            #plt.plot(out2[0], R[i].imag, 'b--')
+            #plt.plot(out2[0], S[i].real,'r--')
+            #plt.plot(out2[0], S[i].imag, 'b--')
             
 
-            #plt.show()
+    plt.show()
     #plt.xlim(-15,15)
     
     plt.legend(loc='best')

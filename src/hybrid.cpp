@@ -94,17 +94,16 @@ int main(int argc, char* argv[])
 #endif
 
 #if(sdeevolve)
-	alpha.init_traj();
+	alpha.init_traj_y();
 	
 	for(t=0; t<nT; t++)
 	  {
-	    
 	    if(t!=0)
 	      {
-		alpha.traj.evolve();
+		alpha.traj.evolve_y();
 		tlast+=dt;
 	      }
-	    alpha.traj.write_variables(fp2,t);
+	    alpha.traj.write_variables(fp2,t, "y");
 	  }
 	
 #endif

@@ -105,7 +105,7 @@ REAL R;
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 16000
+#define nT 1000
 
 double dto=0.001, dt=dto;
 double T=(nT*dt);
