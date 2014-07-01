@@ -2,13 +2,15 @@ import numpy as np
 import itertools as it
 import matplotlib.pyplot as plt
 
-out=np.loadtxt("../data/16x1/SDE/SDE-TIM-h0p0beta0", dtype=np.str)
 
-i=iter(out)
-nT=1000
+h=0
 nV=16
+out=np.loadtxt("../data/"+str(nV)+"x1/SDE/SDE-TIM-h"+str(h)+"p0beta0", dtype=np.str)
+i=iter(out)
+nT=3000
+
 nn=2*2*nV+1
-Nsamples=1
+Nsamples=50
 
 trj1= np.shape(list(it.islice(i,0,nT)))
 
@@ -23,7 +25,7 @@ R = np.zeros(shape=(nV,nT), dtype=np.complex_)
 
 
 
-with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
+with open('../data/'+str(nV)+'x1/SDE/SDE-TIM-h0p0beta0') as t_in:
     
     for ntraj in np.arange(0,Nsamples):
 
@@ -74,7 +76,7 @@ with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
             #plt.plot(out2[0], S[i].imag, 'b--')
             
 
-    plt.show()
+    #plt.show()
     #plt.xlim(-15,15)
     
     plt.legend(loc='best')
@@ -88,7 +90,7 @@ with open('../data/16x1/SDE/SDE-TIM-h0p0beta0') as t_in:
 
 plt.clf()
 plt.plot(tarr, 'ro-');
-plt.show()
+#plt.show()
 
 zav=zav/Nsamples
 Sz=Sz/Nsamples
@@ -133,14 +135,28 @@ plt.show()
 
 # Lattice averaged
 plt.clf()
-plt.plot( tarr, np.mean(Sx, axis=0), 'ro-' , markevery=100,markersize=1,label=r'$\langle S_x \rangle$' )
-plt.plot( tarr, np.mean(Sy, axis=0),  'bo-', markevery=100,markersize=1, label=r'$\langle S_y \rangle$' )
-plt.plot( tarr, np.mean(Sz, axis=0), 'yo-', markevery=100, markersize=1,label=r'$\langle S_z \rangle$' )
+
+
+
+Sxav=np.mean(Sx, axis=0).real
+Syav=np.mean(Sy, axis=0).real
+Szav=np.mean(Sz, axis=0).real
+
+
+plt.plot( tarr, Sxav, 'ro-' , markevery=100,markersize=1,label=r'$\langle S_x \rangle$' )
+plt.plot( tarr, Syav,  'bo-', markevery=100,markersize=1, label=r'$\langle S_y \rangle$' )
+plt.plot( tarr, Szav, 'yo-', markevery=100, markersize=1,label=r'$\langle S_z \rangle$' )
 plt.title(str(Nsamples)+' samples')
 plt.savefig('../figs/'+str(Nsamples)+'samples-polar-x.png')
 plt.legend(loc='best')
 
-plt.show()
+
+fp=open("../data/"+str(nV)+"h"+str(h)+"obs.dat","w")
+for t in np.arange(0,len(Sxav)):
+    fp.write('%f %f %f %f \n' % (tarr[t], Sxav[t], Syav[t], Szav[t]) )
+
+fp.close()
+#plt.show()
 
     
 #plt.plot(zav[2*i+1], zav[2*i+2], 'ro-')

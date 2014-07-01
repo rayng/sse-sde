@@ -110,9 +110,9 @@ class trajectory
  public:
   complex<double> z[N], zp[N];
   complex<double> y[N], yp[N];
+  complex<double> zetafcn[N];
   
   int SS[N], SSp[N];
-  
   
   void evolve();
   void evolve_y();
@@ -120,7 +120,10 @@ class trajectory
   
   void init();
   void init_y();
-  void write_variables(ofstream& fp, int t);
+  void write_variables(ofstream& fp, int t, string var);   // var is either z or y 
+  
+ private:
+  void calc_zetafcn(complex<double>* y, complex<double>* yp);
   
 };
 
@@ -406,20 +409,46 @@ void trajectory::evolve()  // evolves variables forward by dt
       z[i] = z[i] + (drift + strat + field  + noise)*dt;
       zp[i] = zp[i] + (driftpr + stratpr + fieldpr + noisepr )*dt;
       
+      
+      
     }
   
 }  
 
 
 
-void trajectory::write_variables(ofstream& fp, int t)
+void trajectory::write_variables(ofstream& fp, int t, string var)
 {
   int i;
   fp << tlast  ;
-  for(i=0; i<N; i++)
-    fp << setprecision(20) << " " <<  z[i].real()  << " " <<  z[i].imag()  
-       << " " <<  zp[i].real() << " " << zp[i].imag() ;
-  fp<<endl;
+  
+  if(var=="z")
+    {
+      for(i=0; i<N; i++)
+	fp << setprecision(20) << " " <<  z[i].real()  << " " <<  z[i].imag()  
+	   << " " <<  zp[i].real() << " " << zp[i].imag() ;
+      fp<<endl;
+    }
+  
+  if(var=="y")
+    {
+      for(i=0; i<N; i++)
+	{
+	  if(SS[i] == 1)
+	    z[i] = -log(y[i]);
+	  else if(SS[i] == -1)
+	    z[i] =  log( conj(y[i]) ) ;
+	  
+	  if(SSp[i] == 1)
+	    zp[i] = -log(yp[i]);
+	  else if(SSp[i]==-1)
+	    zp[i] =  log( conj(yp[i]) ) ;
+	  
+	  fp << setprecision(20) << " " <<  z[i].real()  << " " <<  z[i].imag()  
+	     << " " <<  zp[i].real() << " " << zp[i].imag() ;
+	}
+      fp<<endl;
+    }
   
 }
 
@@ -430,13 +459,122 @@ void trajectory::write_variables(ofstream& fp, int t)
 void trajectory::evolve_y()  // evolves variables forward by dt  
 {
   
+  int i,l,m;
+  double h=hb*2.*d, tol=1.;
+  complex<double> drift=0., strat=0., field=0., noise=0.;
+  complex<double> driftpr=0., stratpr=0., fieldpr=0., noisepr=0.;
+  complex<double> I (0.,1.);
   
+  complex<double> eta[N], zeta[N];
+  
+  h=2.*h;  //doube the field
+  
+  // Generate noise
+  for(i=0; i<N; i++)
+    {
+      eta[i].real()=1./sqrt(2.*dt)*normdist(r);
+      eta[i].imag()=1./sqrt(2.*dt)*normdist(r);
+
+      zeta[i].real()=1./sqrt(2.*dt)*normdist(r);
+      zeta[i].imag()=1./sqrt(2.*dt)*normdist(r);
+    }
+  
+  
+  calc_zetafcn(y,yp);
+  //h=0.;
+  for(i=0; i<N; i++)
+    {
+      l=i-1;
+      m=i+1;
+      
+      if(l<0)
+	l=N-1;
+      if(m>=N)
+	m=0;
+      
+      // Non-primed variables
+      
+      if(SS[i]==1)
+	{
+	  drift=-I*0.5*y[i]*( zetafcn[l] + zetafcn[m] );
+	  field=I*h*0.5*(1. -y[i]*y[i]);
+	  noise = y[i]*(eta[i]+I*conj(eta[l]));
+	}
+      
+      else if(SS[i]==-1)
+	{
+	  drift=-I*0.5*y[i]*( zetafcn[l] + zetafcn[m] );
+	  field=-I*h*0.5*(1. -y[i]*y[i]);
+	  noise = y[i]*(conj(eta[i])-I*eta[l]);
+	}
+      
+      // primed variables
+      if(SSp[i]==1)
+	{
+	  driftpr=I*0.5*yp[i]*( zetafcn[l] + zetafcn[m] );
+	  fieldpr=-I*h*0.5*(1. -yp[i]*yp[i]);
+	  noisepr = -yp[i]*(zeta[i]-I*conj(zeta[l]));
+	}
+      else if(SSp[i]==-1)
+	{
+	  driftpr=I*0.5*yp[i]*( zetafcn[l] + zetafcn[m] );
+	  fieldpr=I*h*0.5*(1. -yp[i]*yp[i]);
+	  noisepr = yp[i]*(conj(zeta[i])+I*zeta[l]);
+	}
+      
+      // time step
+      y[i] = y[i] + (drift + strat + field  + noise)*dt;
+      yp[i] = yp[i] + (driftpr + stratpr + fieldpr + noisepr )*dt;
+    }
 
 
+  // Update sign 
+  
+  for(i=0; i<N; i++)
+    {
+      //  Update Sign                                                                          
+      if( abs(y[i]) > tol  ) 
+	{
+	  SS[i]= -SS[i];
+	  y[i] = 1./ conj(y[i]);
+	}
+      
+      if( abs(yp[i]) > tol  ) 
+	{
+	  SSp[i] = -SSp[i];
+	  yp[i] = 1./ conj(yp[i]);
+	}
+    }
+  
+  
 }
 
-
- 
+// ++++++++++++++++++++++++++++++
+// compute the zeta-function
+// ++++++++++++++++++++++++++++++
+void trajectory::calc_zetafcn(complex<double>* y, complex<double>* yp)
+{
+  int i;
+  for(i=0; i<N; i++)
+    if(SS[i]==1 && SSp[i]==1)
+      zetafcn[i] = ( 1.-y[i]*yp[i] )/ ( 1.+ y[i]*yp[i])   ;
+  
+    else if(SS[i]==1 && SSp[i]==-1)
+      zetafcn[i] = (   ( conj(yp[i]) - y[i]  ) / ( conj(yp[i]) + y[i]  ) );
+  
+    else if (SS[i]==-1 && SSp[i] ==1)
+      zetafcn[i]= (   ( conj(y[i]) - yp[i]  ) / ( conj(y[i]) + yp[i]  ) );
+    
+    else if (SS[i]==-1 && SSp[i] ==-1)
+      zetafcn[i]= ( conj(y[i])*conj(yp[i]) - 1.  )  / ( conj(y[i])*conj(yp[i]) + 1.  ) ;
+    else
+      cout << "Problem in zetafcn calculation" << " " << SS[i] << " " << SSp[i] << endl;
+  
+  
+  
+}
+  
+  
 
 
 

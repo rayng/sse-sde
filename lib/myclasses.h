@@ -88,22 +88,14 @@ void lattice::init_traj_y()
 {
   int i;
   //If y-variables
+  
   for(i=0; i<N; i++)
     {
-      if(spin[i]==1)
-	{
-	  traj.y[i].real()=0.;
-	  traj.y[i].imag()=0.;
-	  traj.yp[i]=conj(traj.z[i]);
-	  traj.SS[i]=1;
-	}
-      else if(spin[i]==-1)
-	{
-	  traj.y[i].real()=0.;
-	  traj.y[i].imag()=0.;
-	  traj.yp[i]=conj(traj.z[i]);
-	  traj.SSp[i]=-1;
-	}
+      traj.y[i].real()=1e-10;
+      traj.y[i].imag()=0.;
+      traj.yp[i]=conj(traj.y[i]);
+      traj.SS[i]=spin[i];
+      traj.SSp[i]=traj.SS[i];
     }
 }
 

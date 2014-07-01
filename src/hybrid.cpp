@@ -94,6 +94,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if(sdeevolve)
+	tlast=0.;
 	alpha.init_traj_y();
 	
 	for(t=0; t<nT; t++)
