@@ -1,9 +1,4 @@
-
-//
-// Over here I will modify the nuber of loops in the problem. 
-// The average number of vertices visited should be roughly 2 <nH>
-//
-// Now lets calculate the fidelity susceptibility. 
+// Lattice average
 //
 #include "preprocc6.hpp"
 
