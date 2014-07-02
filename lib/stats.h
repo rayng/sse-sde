@@ -1,25 +1,25 @@
 class bin
 {
-  
+  // modify size of of bin
+
 public:
   long double obs[nobs];
   long double physobs[nobs];   // hard coded =/
-    
   
   bin() 
-  {
-    zero();
-  }
+    {
+      zero();
+    }
   
   void operator= ( bin &rhs)
-  {
-    for(int i=0; i< nobs; i++)
-      {
-	obs[i] = rhs.obs[i];
-	//physobs[i] = rhs.physobs[i];
-      }
-  }
-
+    {
+      for(int i=0; i< nobs; i++)
+	{
+	  obs[i] = rhs.obs[i];
+	  //physobs[i] = rhs.physobs[i];
+	}
+    }
+  
 
   void operator+= ( bin &rhs)
   {
@@ -100,11 +100,95 @@ public:
 };
 
 
+/* -----------------------------------------------------
+// Time bin
+----------------------------------------------------- */
+class timebin
+{
+ private:
+  
+  //member functions
+  void zero();
+  void dumpSx(complex<double> val, int pos);
+  void dumpSy(complex<double> val, int pos);
+  void dumpSz(complex<double> val, int pos);
+  void average(int num);
+  
+  
+ public:
+  // member data
+  complex<double> *Sx, *Sy, *Sz;
+  int size;
+  
+  // Constructor
+  timebin(int n);
+  
+  
+  // Destructor
+  virtual ~timebin();
+
+};
+
+// Destuctor
+timebin::~timebin()
+{
+}
+
+timebin::timebin(int n)
+{
+  size=n;
+  
+  // allocate arrays
+  Sx = new complex<double> [size];
+  Sy = new complex<double> [size];
+  Sz = new complex<double> [size];
+  zero();
+}
+
+void timebin::zero()
+{
+  for(int i=0; i<size; i++)
+    {
+      Sx[i]=0.;
+      Sy[i]=0.;
+      Sz[i]=0.;
+    }
+}
+
+void timebin::average(int num)
+{
+  for(int i=0; i<size; i++)
+    {
+      Sx[i]/=num;
+      Sy[i]/=num;
+      Sz[i]/=num;
+    }
+}
+void timebin::dumpSx(complex<double> val, int pos)
+{
+  Sx[pos] = val;
+}
+
+void timebin::dumpSy(complex<double> val, int pos)
+{
+  Sy[pos] = val;
+}
+
+void timebin::dumpSz(complex<double> val, int pos)
+{
+  Sz[pos] = val;
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
 
 /* -----------------------------------------------------
 // The trajectory class
 ----------------------------------------------------- */
-
 class trajectory
 {
  public:
@@ -114,6 +198,8 @@ class trajectory
   
   int SS[N], SSp[N];
   
+  timebin tbin(nT);
+  
   void evolve();
   void evolve_y();
   void calcobservables();
@@ -121,8 +207,10 @@ class trajectory
   void init();
   void init_y();
   void write_variables(ofstream& fp, int t, string var);   // var is either z or y 
+  void genzfromy(bool write, ofstream& fp);
   
- private:
+ private:  
+
   void calc_zetafcn(complex<double>* y, complex<double>* yp);
   
 };
@@ -139,7 +227,7 @@ void trajectory::evolve()  // evolves variables forward by dt
   complex<double> drift=0., driftpr=0., strat=0., stratpr=0., field=0., fieldpr=0., noise, noisepr;
   complex<double> I (0,1.);
   double hh=2.*d*hb;
-
+  
   for(i=0;i<N;i++)
     {
       // expensive functions
@@ -409,21 +497,46 @@ void trajectory::evolve()  // evolves variables forward by dt
       z[i] = z[i] + (drift + strat + field  + noise)*dt;
       zp[i] = zp[i] + (driftpr + stratpr + fieldpr + noisepr )*dt;
       
-      
-      
     }
   
 }  
 
 
+void trajectory:: genzfromy(bool write, ofstream& fp)
+{
+  for(int i=0; i<N; i++)
+    {
+      if(SS[i] == 1)
+	z[i] = -log(y[i]);
+      else if(SS[i] == -1)
+	z[i] =  log( conj(y[i]) ) ;
+      
+      if(SSp[i] == 1)
+	zp[i] = -log(yp[i]);
+      else if(SSp[i]==-1)
+	zp[i] =  log( conj(yp[i]) ) ;
+    }
+  
+  if(write)
+    {
+      fp << tlast  ;
+      for(int i=0; i<N; i++)
+	fp << setprecision(20) << " " <<  z[i].real()  << " " <<  z[i].imag()  
+	   << " " <<  zp[i].real() << " " << zp[i].imag() ;
+      fp << endl;  
+    }
+  
+  
+}
+
 
 void trajectory::write_variables(ofstream& fp, int t, string var)
 {
   int i;
-  fp << tlast  ;
   
   if(var=="z")
     {
+      fp << tlast  ;
       for(i=0; i<N; i++)
 	fp << setprecision(20) << " " <<  z[i].real()  << " " <<  z[i].imag()  
 	   << " " <<  zp[i].real() << " " << zp[i].imag() ;
@@ -431,24 +544,9 @@ void trajectory::write_variables(ofstream& fp, int t, string var)
     }
   
   if(var=="y")
-    {
-      for(i=0; i<N; i++)
-	{
-	  if(SS[i] == 1)
-	    z[i] = -log(y[i]);
-	  else if(SS[i] == -1)
-	    z[i] =  log( conj(y[i]) ) ;
-	  
-	  if(SSp[i] == 1)
-	    zp[i] = -log(yp[i]);
-	  else if(SSp[i]==-1)
-	    zp[i] =  log( conj(yp[i]) ) ;
-	  
-	  fp << setprecision(20) << " " <<  z[i].real()  << " " <<  z[i].imag()  
-	     << " " <<  zp[i].real() << " " << zp[i].imag() ;
-	}
-      fp<<endl;
-    }
+    genzfromy(true, fp);
+  
+  
   
 }
 

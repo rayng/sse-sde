@@ -19,6 +19,7 @@ int main(int argc, char* argv[])
   int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num,s,t;
   lattice alpha, beta_;
   bin obs;
+
     // Set up field arrays.
   h_iter=convertString(argv[1]);     
   config="../init/init.config"+convertInt(Lx)+"h"+argv[1];
@@ -99,7 +100,16 @@ int main(int argc, char* argv[])
 		alpha.traj.evolve_y();
 		tlast+=dt;
 	      }
-	    alpha.traj.write_variables(fp2,t, "y");
+	    //alpha.traj.write_variables(fp2, t, "y");
+	    
+	    // calculate observables 
+	    //alpha.traj.genzfromy();
+	    
+	    
+	    
+	    // write out observables
+	    
+	    
 	  }
 	
 #endif
