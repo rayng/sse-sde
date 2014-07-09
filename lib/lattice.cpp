@@ -1,63 +1,458 @@
-// Note that this class uses Lx, Ly, Lz and N which ae 
-// system defined variables. These therefore have to
-// 
+#include "lattice.hpp"
 
-class lattice
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::buildlattice()
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
 {
+  int i, x,  y, z, v, l, s[4], e, vnum, inleg, exitleg;
+  double hav=0.;
+  
+  // Calloc-ing memory.   <-- just a good exercise I suppose.
+  bsite = (int**) calloc( 2,sizeof(int*) );       // This is global, all lattices will share this. 
+  for(i=0; i<2; i++)
+    bsite[i] = (int*) calloc(Nb, sizeof(int) );
+  
+  
+  //--------------------------
+  // CUBIC GEOMETRY
+  //--------------------------
+  for(z=0; z<Lz; z++)
+    for(y=0; y<Ly; y++)
+      for(x=0; x<Lx; x++) {
+	i = x + y*Lx + z*(Lx*Ly);
+	if(d==1) {
+	  // x bonds
+	  bsite[0][i] = i  ;
+	  bsite[1][i] = (x+1)%Lx + y*Lx + z*Lx*Ly ; 
+	}
+	  
+	if(d==2) {
+	  // x bonds
+	  bsite[0][i] = i  ;
+	  bsite[1][i] = (x+1)%Lx + y*Lx + z*Lx*Ly ; 
+	  // y bonds
+	  bsite[0][i+N] = i  ;
+	  bsite[1][i+N] = x + ( (y+1)*Lx )%(Lx*Ly) + z*Lx*Ly; 
+	}
+	
+	if(d==3) {
+	  // x bonds
+	  bsite[0][i] = i  ;
+	  bsite[1][i] = (x+1)%Lx + y*Lx + z*Lx*Ly ; 
+	  // y bonds
+	  bsite[0][i+N] = i  ;
+	  bsite[1][i+N] = x + ( (y+1)*Lx )%(Lx*Ly) + z*Lx*Ly; 
+	  // z bonds
+	  bsite[0][i+2*N] = i  ;
+	  bsite[1][i+2*N] = x + y*Lx + ( (z+1)*(Lx*Ly) ) % N; 
+	}
+      }
+  
+  // Staggered field
+  for(i=0; i<N; i++) {
+    x = i%Lx;
+    y = i%(Lx*Ly)/Lx;
+    z = i/(Lx*Ly);
+    phi[i] = pow(-1., (x+y+z));
+  }
+  
+  // this need to be shortened ermagawdddd
+  // -------------------------------------------------
+  // INITIALISE LEGSPIN     
+  // - OPTYPE (HARDCODED)
+  // - GLOBAL WEIGHTS
+  // - EPSILON-NESS
+  // -------------------------------------------------
+  // vertex 0  ->    O  X
+  //                 ----
+  //                 X  O   
+  optype[0] = 1;
+  eps_bool[0] = false;
+  legspin[0][2] = -1;  legspin[0][3] = 1;
+  legspin[0][0] = 1;  legspin[0][1] = -1;
+  
+  // vertex 1  ->    O  X
+  //                 ----
+  //                 O  X
+  optype[1] = 0;
+  eps_bool[1] = true;
+  legspin[1][2] = -1;  legspin[1][3] = 1;
+  legspin[1][0] = -1;  legspin[1][1] = 1;
+  
+  // vertex 2  ->    X  X
+  //                 ----
+  //                 O  O
+  optype[2] = 1;
+  eps_bool[2] = false;
+  legspin[2][2] = 1;  legspin[2][3] = 1;
+  legspin[2][0] = -1;  legspin[2][1] = -1;
+  
+  // vertex 3  ->    O  O
+  //                 ----
+  //                 O  O
+  optype[3] = 0;
+  eps_bool[3] = true;
+  legspin[3][2] = -1;  legspin[3][3] = -1;
+  legspin[3][0] = -1;  legspin[3][1] = -1;
+  
+  
+  /* ------------------------------------------------------------ */
+  
+  // vertex 4  ->    X  O
+  //                 ----
+  //                 O  X
+  optype[4] = 1;
+  eps_bool[4] = false;
+  legspin[4][2] = 1;  legspin[4][3] = -1;
+  legspin[4][0] = -1;  legspin[4][1] = 1;
+  
+  // vertex 5  ->    X  O
+  //                 ----
+  //                 X  O
+  optype[5] = 0;
+  eps_bool[5] = true;
+  legspin[5][2] = 1;  legspin[5][3] = -1;
+  legspin[5][0] = 1;  legspin[5][1] = -1;
+  
+  // vertex 6  ->    O  O
+  //                 ----
+  //                 X  X
+  optype[6] = 1;
+  eps_bool[6] = false;
+  legspin[6][2] = -1;  legspin[6][3] = -1;
+  legspin[6][0] = 1;  legspin[6][1] = 1;
+  
+  // vertex 7  ->    X  X
+  //                 ----
+  //                 X  X
+  optype[7] = 0;
+  eps_bool[7] = true;
+  legspin[7][2] = 1;  legspin[7][3] = 1;
+  legspin[7][0] = 1;  legspin[7][1] = 1;
+  
+  // -------------------------------------------------
+  //  INITIALISE VERTEX_ID ARRAY
+  // -------------------------------------------------
+  for(v=0; v<nV; v++) {
+    for(l=0; l<4; l++)
+      s[l] = legspin[v][l];
+    vtx_id[s[0]+1][s[1]+1][s[2]+1][s[3]+1]= v ;
+  }
+  
+  // -------------------------------------------------
+  //  INITIALISE VERTEX_FLIPPING ARRAY
+  // -------------------------------------------------
+  for(v=0; v<nV; v++) {
+    for(i=0;i<4;i++)
+      s[i]=legspin[v][i];
+    
+    for(i=0; i<4; i++)
+      for(e=0; e<4; e++) {
+	//flip
+	s[i]=-s[i];
+	s[e]=-s[e];
+	vtx_flip[v][i][e]=vtx_id[s[0]+1][s[1]+1][s[2]+1][s[3]+1];
+	
+	//undo
+	s[i]=-s[i];
+	s[e]=-s[e];
+      }
+  }
+  
+  // -------------------------------------------------
+  // INITIALISE RANDOM FIELD
+  // -------------------------------------------------
+  // Staggered case
+  if(system=="staggered")
+    for(i=0; i<N; i++) 
+      h[i] = phi[i]*hb;
+  
+  if(system=="uniform")
+    for(i=0; i<N; i++) 
+      h[i] = hb;
+  
+  if(system=="disorder")
+    {
+      hav=0.;
+      for(i=0; i<N; i++) 
+	h[i] = 2.*hb*r.FloatN()-hb;
+      hav+=h[i];          // No more shifting
+      hav = hav / (double) N;
+      for(i=0; i<N; i++)
+	h[i] -= hav;
+    }
+  
+  
+  // -------------------------------------------------
+  // INITIALISE VERTEX LIST
+  // -------------------------------------------------
+  for(i=0; i<nV; i++)
+    {
+      vnum=0;
+      for(l=0; l<4; l++)
+	s[l] = legspin[i][l];
+      inleg = 0; // fixed
+      for(exitleg=0; exitleg<4; exitleg++)
+	{
+	  s[inleg] = -s[inleg];
+	  s[exitleg] = -s[exitleg];
+	  vlist[i][vnum] = vtx_id[s[0]+1][s[1]+1][s[2]+1][s[3]+1];  
+	  // UNDO! Since we're using the same array .. 
+	  s[inleg] = -s[inleg];
+	  s[exitleg] = -s[exitleg];
+	  vnum++;
+	}
+    }
+  
+  // -------------------------------------------------
+  // INITIALISE EPSILONN ARRAY
+  // -------------------------------------------------
+  for(i=0; i<Nb; i++)
+    epsilonn[i] = 0.;
+  
+  // -------------------------------------------------
+  //  INITIALISE PROBABILITY TABLES
+  // -------------------------------------------------
+  for(l=0; l<Nb; l++)
+    for(i=0; i<4; i++)              
+      for(e=0; e<4; e++)
+	for(v=0; v<nV; v++)
+	  prob[l][i][e][v]=-1;
+}
 
-public:
-
-  //member data
-  long int M;                              // imaginary time direction
-  long int nH;                             // number of operators
-  long int Nl;
-  int spin[N], first[N], last[N];     // lattice configuration
-  int *sm;                            // initialised in DIAGONAL UPDATE
-  int *linklist;                      // modifed in    
-  int *vtx;
-  int *vb;
-  string init_state;                  // hightemp, FMup, FMdown
-  bin XPS;                            // I just called this bin object: XPS
-  
-  // member functions
-  void update_spin_config ();
-  void diagonal_update();
-  void adjust_truncate();
-  void construct_linklist();
-  void extend_arrays();
-  void loop_update(int nsamples, ofstream& ferr);
-  void loop_update_eqm(int nsamples, ofstream& ferr);
-  void measure();
-  void init_config(string state);
-  void write_to_file(ofstream& fp);
-  void free_arrays();
-  
-  // stochastic trajectories
-  trajectory traj;
-  void init_traj();
-  void init_traj_y();
-  
-  
-  // default constructor
-  lattice() {   
-    XPS.zero();
-  }
-  long int set_M( long int M_){
-    return M=M_;
-  }
-  long int set_nH(long int n_){
-    return nH=n_;
-  }
-  
-  long int set_Nl(long int Nl_){
-    return Nl=Nl_;
-  }
-  
-};
 
 
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
-void lattice::init_traj()
+void lattice::generate_probtable_simplex()
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  MAT  A;
+  int  IPOSV[MMAX], IZROV[NMAX];
+  int  ICASE;
+  int  NN = nV*16+1;         // Number of variables.
+  int  MM;                   // Total number of constraints
+  int  M1 =  0 ;             // Number of '<=' constraints
+  int  M2 =  1 ;             // Number of '>=' constraints
+  int  M3 =  nV*6 + nV*4;    // Number of '=' constraints
+  REAL R;
+  
+  double hi, hj, sol[NN];
+  int i,j,k, m, pos,conjpos,b, row_count;
+  
+  MM=M1+M2+M3;  // Total number of constraints
+  
+  for(b=0; b<Nb; b++)
+    {
+      /*printf("\n");
+	printf(" Number of variables in E.F.: %d \n", NN); 
+	printf(" Number of <= inequalities..: %d \n", M1); 
+	printf(" Number of >= inequalities..: %d \n", M2); 
+	printf(" Number of = equalities.....: %d \n", M3); 
+      */
+      hi = h[bsite[0][b]];
+      hj = h[bsite[1][b]];
+      
+      
+      // We need to add back epsilon later on.
+      W[b][0]= 0.25;
+      W[b][1]= 0.;         // + epsilonn[b];
+      W[b][2]= 0.25;
+      W[b][3]= -hb;         // + epsilonn[b];
+      
+      W[b][4]= 0.25;
+      W[b][5]= 0.;          // + epsilonn[b];
+      W[b][6]= 0.25;
+      W[b][7]= hb;          // + epsilonn[b];
+      
+      /* -----------------------------------
+	 Let the madness begin ... 
+	 Create the tableau and initialise
+	 if !
+	 ----------------------------------- */
+      for (i=1; i<=MM+2; i++)
+	for (j=1; j<=NN+1; j++)
+	  A[i][j]=0.0;
+      
+      for(i=0; i<MMAX; i++)
+	IPOSV[i] = 0.;
+      
+      for(i=0; i<NMAX; i++)
+	IZROV[i] = 0.;
+      
+      /* ---------------------------------------------------
+	 Input BOUNCE FUNCTION <-- first row of tableau A
+	 The function is now F = C - (\sum_i bounce_i)
+	 where C>0.
+	 This will drive \sum_i bounce_i to be minimized by
+	 being as close to zero as possible.
+	 -------------------------------------------------- */
+      row_count=1;  // We don't use  row 0.
+      for(k=0; k<nV; k++)
+	for(i=0; i<4; i++)
+	  for(j=0; j<4; j++)
+	    {
+	      pos = k*16 + i*4 + j + 2;   // 2 is the constant shift  
+	      
+	      if(i==j)
+		A[1][pos] = -1.;
+	    }
+      A[1][1] = EPSMIN;   // Any positive number here will do
+      row_count ++;
+      
+      /* ---------------------------------------------------
+	 Input  epsilon constraint.   epsilon >= C >0
+	 This ensures that epsilon is some positive number as
+	 opposed to being zero. 
+	 -------------------------------------------------- */
+      A[row_count][nV*16+2] = -1;     // epsilon coefficient
+      A[row_count][1] = EPSMIN;          // epsilon constant: always column 1
+      row_count++;
+      
+      /* ---------------------------------------------------
+	 Input WEIGHT constraints                       
+	 e.g  m=2: a^k_11 + a^k_12 + a^k_13 + a^k_14  = W^k_1          
+	 e.g  m=3: a^k_21 + a^k_22 + a^k_23 + a^k_24  = W^k_2 
+	 :
+	 :
+	 etc                                         
+	 --------------------------------------------------- */
+      bool sign_flip;
+      for(k=0; k<nV; k++)
+	for(m=0; m<4; m++) 
+	  {
+	    // Constant value: not coeffcients
+	    if( W[b][vlist[k][m]] <0 ) 
+	      sign_flip=true;   // means negative
+	    else 
+	      sign_flip=false;
+	    A[row_count][1] = fabs(W[b][vlist[k][m]]);   // W[k][m] // consider epsilon. 
+	    
+	    //Coefficients of a^k_ij:
+	    for(j=0; j<4; j++) 
+	      {
+		pos = k*16 + m*4 + j + 2;  
+		if(sign_flip)
+		  A[row_count][pos] = +1.; 
+		else if(!sign_flip)
+		  A[row_count][pos] = -1.; 
+	      }
+	    
+	    // epsilon value:
+	    if( eps_bool[vlist[k][m]] )
+	      if(sign_flip)
+		A[row_count][nV*16+2] = -1.;   // epsilon coefficient
+	      else if(!sign_flip)
+		A[row_count][nV*16+2] = 1.;    // epsilon coefficient
+	    
+	    row_count ++;
+	  }
+      
+      /* ---------------------------------------------------
+	 Input DETAILED BALANCE constraints             
+	 
+	 i.e.  a^k_ij = a^k_ji
+	 
+	 ---------------------------------------------------*/
+      for(k=0; k<nV; k++)
+	for(i=0; i<4; i++)
+	  for(j=0; j<4; j++)
+	    if(i>j)
+	      {
+		pos = k*16 + i*4 + j + 2;   // 2 is the constant shift  
+		conjpos = k*16 + j*4 + i + 2;   // 2 is the constant shift  
+		A[row_count][pos]= 1.;
+		A[row_count][conjpos] = -1.;
+		A[row_count][1] = 0.;
+		row_count++;
+	      }
+
+      /*
+      printf("\n Input Table:\n");
+      for (i=1; i<=MM+1; i++) 
+	{
+	  for (j=1; j<=NN+1; j++)
+	    ftest << A[i][j] << " " ;
+	  ftest<< endl;
+	}
+      */
+      /* ---------------------------------------------------
+	 Simplex and print results                       
+	 --------------------------------------------------- */
+      simplx(A,MM,NN,M1,M2,M3,&ICASE,IZROV,IPOSV);
+      //blank();
+      
+      for(i=0; i<NN; i++)
+	sol[i]=0.;
+      
+      if (ICASE==0) {  //result ok.
+	//printf("\n Minimum of bounces = %f\n", A[1][1]-TOL);
+	for (i=1; i<=NN; i++) {
+	  for (j=1; j<=MM; j++)
+	    if (IPOSV[j] == i)  {
+	      sol[i-1] = A[j+1][1];
+	      //printf("  X%d = %f\n", i, A[j+1][1]);
+	      goto e3;
+	    }
+	  //printf("  X%d = %f\n", i, 0.0);
+	e3:;}
+      }
+      else
+	printf(" No solution (error code = %d).\n", ICASE);
+      //printf("\n");
+      
+      /* ---------------------------------------------------
+	 Now assign the probability tables..
+	 --------------------------------------------------- */
+      epsilonn[b] = sol[NN-1];
+      
+      // Insert back epsilon into the weights
+      for(k=0; k<nV; k++) {
+	if(eps_bool[k])
+	  W[b][k] += epsilonn[b];
+	
+	if( abs(W[b][k]) < zerotol && W[b][k]!=0.) {
+	  W[b][k]=0.;
+	  cout << "Negative weights!: " << b << " " << k << " " << W[b][k]  << endl;  
+	}
+	
+      }
+      for(k=0; k<nV; k++)
+	for(i=0; i<4; i++)
+	  for(j=0; j<4; j++) {
+	    pos = k*16 + i*4 + j;    
+	    
+	    if( sol[pos] > zerotol && W[b][vlist[k][i]] > zerotol )
+	      {
+		prob_keynumbers[b][i][j][vlist[k][i]][0] = sol[pos];
+                prob_keynumbers[b][i][j][vlist[k][i]][1] = W[b][vlist[k][i]];
+		prob[b][i][j][vlist[k][i]] = sol[pos] /  W[b][vlist[k][i]] ;
+	      }
+	    else 
+	      {
+		prob_keynumbers[b][i][j][vlist[k][i]][0] = sol[pos];
+                prob_keynumbers[b][i][j][vlist[k][i]][1] = W[b][vlist[k][i]];
+		prob[b][i][j][vlist[k][i]] = 0.;
+	      }
+	  }
+      
+      for(i=0; i<nV; i++)
+	W[b][i]=beta*Nb*W[b][i];   // renormalize this bond-dependent weight 
+      
+    }
+
+
+}
+
+
+
+
+
+
+
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::init_traj_z()
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 {
   int i;
@@ -101,9 +496,6 @@ void lattice::init_traj_y()
 
 
 
-
-
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 void lattice::init_config(string state)
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -141,91 +533,82 @@ void lattice::init_config(string state)
 
 
 
-
-
-
- // ++++++++++++++++++++++++++++++++++++++++++++++++++
- void lattice::update_spin_config()
- // ++++++++++++++++++++++++++++++++++++++++++++++++++
- { // For after loop update
-   int i, p , l;
-   for(i=0; i<N; i++)
-     if(first[i]!=-1) {
-       p = first[i]/4;  // vertex number;
-       l = first[i]%4;
-       spin[i]  = legspin[vtx[p]][l];
-     }
-     else {
-       //flip with probabiliy half
-       if(r.FloatN<double>() > 0.5)
-	 spin[i] = -spin[i];
-     }
- }
- // **************************************************
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::update_spin_config()
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{ // For after loop update
+  int i, p , l;
+  for(i=0; i<N; i++)
+    if(first[i]!=-1) {
+      p = first[i]/4;  // vertex number;
+      l = first[i]%4;
+      spin[i]  = legspin[vtx[p]][l];
+    }
+    else {
+      //flip with probabiliy half
+      if(r.FloatN<double>() > 0.5)
+	spin[i] = -spin[i];
+    }
+}
+// **************************************************
 
 
 
 
- // ++++++++++++++++++++++++++++++++++++++++++++++++++
- void lattice::diagonal_update()
- // ++++++++++++++++++++++++++++++++++++++++++++++++++
- {
-   long int i, b;
-   int v, s0, s1, s2, s3;
-   double pinsert, premove, rand;
-   
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::diagonal_update()
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  long int i, b;
+  int v, s0, s1, s2, s3;
+  double pinsert, premove, rand;
+  
+  for(i=0; i<M; i++) 
+    {
+      rand = r.FloatN<double>();
       
-   for(i=0; i<M; i++) 
-     {
-       rand = r.FloatN<double>();
-       
-       if( sm[i] == -1 ) 
-	 {  // identity operator found
-	   b = r.IntegerC<long int>(0,Nb-1);
-	   
-	   //calculate the matrix element:   <alpha(p) | H | alpha(p) >
-	   v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  
-	   // insert diagonal element  
-	   // pinsert = (beta*Nb*W[b][v]) / (double) (M-nH)  ;
-	   pinsert = W[b][v] / (double) (M-nH)  ;
-	   
-	   if (pinsert>=rand) 
-	     {
-	       sm[i] = 2*b ;
-	       nH++; 
-	     }
-	   else 
-	     continue;
-	 }
-       else if ( sm[i]%2 == 0)  // diagonal
-	 {    
-	   b = sm[i]/2;
-	   v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  
-	   // remove diagonal element  	  
-	   //premove =  (double) (M-nH+1) / (beta*Nb * W[b][v]) ; 
-	   premove =  (double) (M-nH+1) / W[b][v] ; 
-	   if (premove>=rand) 
-	     {
+      if( sm[i] == -1 ) 
+	{  // identity operator found
+	  b = r.IntegerC<long int>(0,Nb-1);
+	  
+	  //calculate the matrix element:   <alpha(p) | H | alpha(p) >
+	  v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  
+	  // insert diagonal element  
+	  // pinsert = (beta*Nb*W[b][v]) / (double) (M-nH)  ;
+	  pinsert = W[b][v] / (double) (M-nH)  ;
+	  
+	  if (pinsert>=rand) 
+	    {
+	      sm[i] = 2*b ;
+	      nH++; 
+	    }
+	  else 
+	    continue;
+	}
+      else if ( sm[i]%2 == 0)  // diagonal
+	{    
+	  b = sm[i]/2;
+	  v = vtx_id[spin[bsite[0][b]]+1][spin[bsite[1][b]]+1][spin[bsite[0][b]]+1][spin[bsite[1][b]]+1];  
+	  // remove diagonal element  	  
+	  //premove =  (double) (M-nH+1) / (beta*Nb * W[b][v]) ; 
+	  premove =  (double) (M-nH+1) / W[b][v] ; 
+	  if (premove>=rand) 
+	    {
 	       sm[i]  = -1 ; 
 	       nH--; 
 	     }
-	 }
-       else  
-	 {
-	   b = sm[i] /2;
-	   spin[bsite[0][b]] = -spin[bsite[0][b]];  //update spin
+	}
+      else  
+	{
+	  b = sm[i] /2;
+	  spin[bsite[0][b]] = -spin[bsite[0][b]];  //update spin
 	   spin[bsite[1][b]] = -spin[bsite[1][b]];
-	 }
-       
-       
-     }
-   
-   
-   
-   
-   
- }
- // **************************************************
+	}
+      
+      
+    }
+}
+// **************************************************
 
 
 
@@ -419,11 +802,6 @@ void lattice::extend_arrays()
 
 
 
-
-
-
-
-
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -445,8 +823,6 @@ void lattice::loop_update_eqm(int nsamples, ofstream& ferr)
   for(i=0; i<nH; i++)
     vtx_temp[i]=vtx[i];
   
-  
-    
   while(1)
     { 
       // Finds number of loops to form based on how many vertices are visited
@@ -681,6 +1057,7 @@ void lattice::loop_update(int nsamples, ofstream& ferr)
 	  nn++;
 	}
     SKIP: // This means we do not implement any of the changes made in the vertex changes. 
+
       ;
     } //end while loop
   
@@ -698,7 +1075,7 @@ void lattice::loop_update(int nsamples, ofstream& ferr)
 void lattice::measure()
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 {
-  long int p, b, i,  Nxm=0, Nxp=0, Nym=0, Nyp=0, nn=0;
+  long int p, b, i, j, Nxm=0, Nxp=0, Nym=0, Nyp=0, nn=0;
   long int  ndistemp=0, nhoptemp=0;
   long double mtemp=0., stagtemp=0., windnumx=0., windnumy=0., hh=2.*d*hb;
   int parity=1;
@@ -893,6 +1270,7 @@ void lattice::measure()
 }
 
 
+
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
 void lattice::write_to_file(ofstream& fp)
 // ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -924,5 +1302,66 @@ void lattice::free_arrays()
   delete vtx;
   delete vb;
   delete linklist;
+  free(bsite);
+  
 }
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::check_probtable(ofstream& ferr)
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  double sum=0.;
+  bool flag=true;
+  for( int b=0; b<Nb; b++)
+    for( int k=0; k<nV; k++)
+      for( int i=0; i<4; i++)
+        {
+          sum=0.;
+          for( int j=0; j<4; j++)
+            sum+=prob[b][i][j][k];
+	  
+          // The sum should be 1. at the end of this and we check to ensure that this is so.              // This is a flagged case, meaning there are round off errors                                                                                                                        
+          if( fabs(sum-1.)>zerotol && sum !=0.)
+            {
+              for(int e=0; e<4; e++)
+                ferr << setprecision(15) << "ERROR --> Bond: " << b << " in: " << i <<  " out: " << e << " prob: " << prob_keynumbers[b][i][e][k][0]<< "/" << prob_keynumbers[b][i][e][k][1] <<  \
+		  " = " << prob[b][i][e][k] << " " << prob_keynumbers[b][i][e][k][0]/ prob_keynumbers[b][i][e][k][1] << endl;
+              flag=false;
+            }
+        }
+  
+  if(flag)
+    ferr << "No problems with REALIZATION: " << GLOBAL_REAL << " computed by:  " << GLOBAL_RANK << endl;
+  else
+    ferr << "problems with REALIZATION: " << GLOBAL_REAL << " computed by:  " << GLOBAL_RANK << endl;
+  ferr.flush();
+}
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+void lattice::print_probtable(ofstream& fp)
+// ++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  int i,e,v, l;
+  for(l=0; l<Nb; l++)
+    {
+      fp << "BOND: " << l << endl;
+      for(v=0; v<nV; v++)
+        {
+          fp << "Vertex: " << v << endl;
+          for(i=0; i<4; i++)
+            {
+              for(e=0; e<4; e++)
+                fp <<  prob[l][i][e][v]  << " " ;
+	      fp << endl;
+            }
+          fp << endl;
+        }
+      fp << endl;
+    }
+}
+
+
+
 

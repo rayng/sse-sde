@@ -1,0 +1,31 @@
+L=12   #<---- change lattice size  Lx  
+
+OBJECTS = /usr/local/lib/libRandom.a
+
+FFTW_LIBS = /usr/lib64/
+
+RANDOM_HD = /usr/local/include/
+
+FFTW_HD = /usr/include/
+
+EIGEN_HD = /usr/include/eigen3/
+
+MC_CLASSES_HD = ../lib/
+
+SOURCE = hybrid2.cpp ../lib/bin.cpp ../lib/optimise.cc ../lib/timebin.cpp ../lib/lattice.cpp ../lib/trajectory.cpp 
+
+TARGET=hybrid2_$L
+
+CPP_HDFLAGS = -I$(RANDOM_HD) -I$(EIGEN_HD) -I$(MC_CLASSES_HD) 
+
+OPTIONS = -finline-functions -funroll-loops  -O2 
+
+CC = g++
+
+ALL:
+	$(CC) $(CPP_FLAGS) $(SOURCE) $(CPP_HDFLAGS) $(CPP_LDFLAGS) $(LIBRARIES) -o $(TARGET) $(OBJECTS) $(OPTIONS)	
+
+clean:
+	rm -f *.o*~
+
+

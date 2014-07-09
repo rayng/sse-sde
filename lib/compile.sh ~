@@ -1,0 +1,7 @@
+
+
+g++ test2.cpp bin.cpp optimise.cc timebin.cpp lattice.cpp trajectory.cpp -O3 -finline-functions -funroll-loops -I/usr/local/include/ -o test2 /usr/local/lib/libRandom.a
+
+
+
+

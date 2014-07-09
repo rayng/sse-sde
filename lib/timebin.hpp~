@@ -1,0 +1,37 @@
+#include <fstream>
+#include <iomanip>
+#include <complex>
+#include "globalparams.hpp"
+
+using namespace std;
+
+#ifndef timebin_HPP
+#define timebin_HPP
+
+class timebin
+{
+
+public:
+  
+  // Constructor
+  timebin();
+  timebin(int n);
+  
+  // Destructor
+  virtual ~timebin() {};
+  
+  // member data
+  complex<double> *Sx, *Sy, *Sz;
+  int size;
+  
+  
+  //member functions
+  void zero();
+  void dumpSx(complex<double> val, int pos);
+  void dumpSy(complex<double> val, int pos);
+  void dumpSz(complex<double> val, int pos);
+  void average(int num);
+};
+
+
+#endif

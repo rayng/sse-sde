@@ -1,0 +1,184 @@
+//#define nobs 14
+#include <stdlib.h>
+#include <stdio.h>
+#include <complex>
+#include <iostream>
+#include <fstream>
+#include <limits>
+#include <math.h>
+#include <string>
+#include <sstream>
+#include <assert.h>
+#include <Eigen/Dense>
+//#include <boost/filesystem.hpp> 
+
+#include <RandomLib/Random.hpp>
+#include <RandomLib/NormalDistribution.hpp>
+
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <iomanip>
+
+#include "globalparams.hpp"
+#include "bin.hpp"
+#include "timebin.hpp"
+#include "trajectory.hpp"
+#include "lattice.hpp"
+#include "optimise.h"
+
+
+using namespace std;
+using namespace optimise;
+//using namespace Eigen;
+
+RandomLib::Random r;
+RandomLib::NormalDistribution<double> normdist;
+
+int psamples;
+int  msamples;
+double beta=2.*Lx;
+double  hb=0.25/4.;
+double  epsilonn[Nb]; 
+double tlast=0.;
+double dt=0.001;
+double dto=0.001;
+ofstream fp;
+int GLOBAL_RANK;
+int GLOBAL_REAL;
+
+
+int main()
+{
+  int i, num;
+  lattice alpha;  
+  int Mo=20;
+  int nHo=0;
+  int Nlo=0; 
+  ofstream fp;
+  bin obs;
+  double t;
+  
+  fp.open("prob.dat",ios::out);
+  
+  alpha.init_state="hightemp";    // random initial state
+  alpha.set_M(Mo);
+  alpha.set_nH(nHo);
+  
+  
+  alpha.buildlattice();
+  alpha.generate_probtable_simplex();
+  alpha.check_probtable(fp);
+  alpha.init_config("hightemp");
+  //alpha.print_probtable(fp);
+  
+  alpha.Nl_sum=0;
+  alpha.n_sum=0;
+  
+  for(i=0; i<4*Ne; i++)
+    {
+      alpha.diagonal_update();
+      alpha.adjust_truncate();
+      alpha.loop_update_eqm(i,fp);
+    }
+  alpha.set_Nl( (alpha.Nl_sum/(4*Ne)) );
+  
+  
+
+  for(num=0; num<samples; num++)
+      {
+	psamples=0;       	
+	msamples=0;            // Note that when taking parity into consideration 
+	                       // Nm is such that Nm = msamples + psamples
+	for( i=0; i < Nm; i++) // Most of the sampling is done here. 
+	  {
+	    alpha.diagonal_update();
+	    alpha.loop_update(i,fp);
+#if(measureobs)	    
+	    alpha.measure();
+#endif
+	  } 
+	
+	
+#if(measureobs)
+	assert(Nm==psamples+msamples);
+	alpha.XPS.parityaverage(Nm);
+	obs+=alpha.XPS;  // dump a bin
+	alpha.XPS.zero();
+#endif
+
+#if(sdeevolve)
+	tlast=0.;
+	alpha.init_traj_y();
+	
+	for(t=0; t<nT; t++)
+	  {
+	    if(t!=0)
+	      {
+		alpha.traj.evolve_y();
+		tlast+=dt;
+		
+	      }
+	    //alpha.traj.write_variables(fp2, t, "y");
+	    // calculate observables 
+	    //alpha.traj.genzfromy();
+	    //alpha.traj.calcobservables();
+	    // write out observables
+	    
+	    
+	  }
+	
+#endif
+      }  // every sample is a trajectory
+    
+#if(measureobs)
+  obs.average(samples);
+  obs.write_to_file(fp, alpha.epsilonn);
+  fp << endl;
+  fp.flush();
+#endif
+  alpha.free_arrays();
+  
+
+  fp.close();
+  return 0;
+}
+  
+  
+  
+  
+
+  
+/*---------------------------------------------------------------------
+  WARNING: I have no idea what is going on with the simplex method 
+  here on out.  Just rip it off from Numerical recipes of C++ and 
+  hope for the best
+  DO NOT CHANGE ANYTHING BELOW ...
+  -------------------------------------------------------------------- */
+/*
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void simp1(MAT a,int mm,int *ll,int nll,int iabf,int *kp,REAL *bmax) 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+{
+  //Determines the maximum of those elements whose index is contained in the supplied list 
+  //ll, either with or without taking the absolute value, as flagged by iabf. 
+  int k; 
+  REAL test; 
+  *kp=ll[1]; 
+  *bmax=a[mm+1][*kp+1];
+    if (nll < 2) return; 
+    for (k=2; k<=nll; k++) { 
+      if(iabf == 0) 
+	test=a[mm+1][ll[k]+1]-(*bmax); 
+      else
+	test=fabs(a[mm+1][ll[k]+1])-fabs(*bmax); 
+      if(test > 0.0) { 
+	*bmax=a[mm+1][ll[k]+1]; 
+	*kp=ll[k]; 
+      } 
+    } 
+    return; 
+  } 
+*/
+
+
+

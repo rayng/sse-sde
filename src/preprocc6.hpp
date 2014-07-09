@@ -17,22 +17,17 @@
 #include <sys/types.h>
 #include <iomanip>
 
-// cccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-// ----------------------------------------------------------
-//
-// THIS SPECIFIES THE PHYSICAL MODEL
-// AND THE SIMULATION PARAMETERS.
-//
-// ----------------------------------------------------------
-// ----------------------------------------------------------
+// MC toggles
 #define loadfield 0
 #define FS 0
 #define bounceA 1  // This is the old way of calculating bounce weights
 #define saveconfig 0
 #define append 0
 #define parityinclusion 1
+#define measureobs 1   // Don't need to measure things here. 
+
+//SDE toggles
 #define timeadaptive 1
-#define measureobs 0   // Don't need to measure things here. 
 #define sdeevolve 1
 #define driftterms 1
 #define noiseterms 1
@@ -40,7 +35,7 @@
 #define fieldterms 1
 #define jumptol 0.08
 
-
+// Model selection for evolution
 #define polar_x 0
 #define polar_z 1
 #define XYmodel 0
@@ -48,27 +43,27 @@
 //#define WUsweeps 5000
 //#define Nbins 50
 //#define MCsweeps 100
+
+// System size definition
 #define system "uniform"
 #define Lx 16  /***/
 #define Ly 1 /***/
 #define Lz 1  
 #define d 1
-
-// These are the key parameters
-#define no_real 50000        /***/
-#define nsteps 16             /***/
-#define Np 1                /***/
-#define hbi (0.25 /(2.*d))
-#define hbf (0.5 /(2.*d))    
-#define dh  ((hbf- hbi) / nsteps )
-//#define dh  (0.25 / (2.*d) )
-
 #define N (Lx*Ly*Lz)
 #define Nb (d*N)
 #define nV 8
 #define Pi 3.145159265
 #define Delta 0.
 #define nobs 24
+
+// These are the key parameters
+#define no_real 50000          // disorder realizations
+#define nsteps 16              // field values
+#define Np 1                   // size of batch
+#define hbi (0.25 /(2.*d))     // initial field
+#define hbf (0.5 /(2.*d))      // final field
+#define dh  ((hbf- hbi) / nsteps )   // field step
 
 // ------------------------
 // beta doubling parameters
@@ -78,6 +73,9 @@
 #define Nm (2*Ne)
 #define samples 50
 
+// Number of time steps
+#define nT 3000
+
 // ------------------------
 // Simplex parameters
 // ------------------------
@@ -86,6 +84,15 @@
 #define  REAL  double
 #define  EPSMIN 0.2
 #define  zerotol 1e-13
+
+// cccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+// ----------------------------------------------------------
+//
+// THIS SPECIFIES THE PHYSICAL MODEL
+// AND THE SIMULATION PARAMETERS.
+//
+// ----------------------------------------------------------
+// ----------------------------------------------------------
 
 typedef REAL MAT[MMAX][NMAX];
 
@@ -101,11 +108,9 @@ int  M2 =  1 ;             // Number of '>=' constraints
 int  M3 =  nV*6 + nV*4;    // Number of '=' constraints
 REAL R;
 
-
 // ------------------------------
 // Real time evolution 
 // ------------------------------
-#define nT 3000
 
 double dto=0.001, dt=dto;
 double T=(nT*dt);

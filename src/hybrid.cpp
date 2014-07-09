@@ -19,8 +19,9 @@ int main(int argc, char* argv[])
   int i,j, g, rr, x, n=0, nr=0, nn,bb, n_per_interval, local_start, local_end, num,s,t;
   lattice alpha, beta_;
   bin obs;
-
-    // Set up field arrays.
+  timebin tbin(nT);
+  
+  // Set up field arrays.
   h_iter=convertString(argv[1]);     
   config="../init/init.config"+convertInt(Lx)+"h"+argv[1];
   batch = convertString(argv[2]);
@@ -65,6 +66,8 @@ int main(int argc, char* argv[])
     }
     alpha.set_Nl(Nl_sum/(4*Ne));
     
+    //cout << alpha.Nl << " " << alpha.nH << " " << alpha.M << endl;
+    
     //  Measure segment - No adjusting during measurement
     for(num=0; num<samples; num++)
       {
@@ -101,12 +104,9 @@ int main(int argc, char* argv[])
 		tlast+=dt;
 	      }
 	    //alpha.traj.write_variables(fp2, t, "y");
-	    
 	    // calculate observables 
 	    //alpha.traj.genzfromy();
-	    
-	    
-	    
+	    //alpha.traj.calcobservables();
 	    // write out observables
 	    
 	    
@@ -615,38 +615,6 @@ void GENERATE_PROBTABLE_SIMPLEX()
 
 
 
-
-/*
-// -------------------------------------------------------------------------------------------------------
-//
-void WRITE_HEADER(ofstream& fp)
-//
-//  This will write the header for the data files.
-//
-// -------------------------------------------------------------------------------------------------------
-// -------------------------------------------------------------------------------------------------------
-{
-
-  string sp= "      ";
-  fp << "# ---------------------------------------------------------------------------------"   << endl;
-  fp << "# Here are the results for a: " << Lx << " x " << Ly <<" x " << Lz << " lattice"       << endl;
-  fp << "# ---------------------------------------------------------------------------------"   << endl;
-  fp << "# Delta/J: "  << Delta                                                                 << endl;
-  fp << "# hbi/J: "    << hbi*2.*d                                                              << endl;
-  fp << "# hbf/J: "    << hbf*2.*d                                                              << endl;
-  fp << "# dh/J: "     << dh*2.*d                                                               << endl;
-  fp << "# Nbins: "    << Nbins                                                                 << endl;
-  fp << "# Nsamples: " << MCsweeps                                                              << endl;
-  fp << "# Nrealizations: " << no_real                                                          << endl;
-  fp << "# ================================================================================="   << endl;
-  fp << "# Cutoff"  << sp << "T"     << sp  <<  "beta"     << sp << "hb"  << sp << "Delta"    << sp 
-     << "E/N"       << sp << "<M>/N" << sp  << "<M^2>/N^2" << sp << "Sus" << sp << "stag <M>" << sp 
-     << "stiffness" << sp << "comp"  << endl;
-  fp << "# ================================================================================="    << endl;
-}
-*/
-
-
 // =======================================================================================================
 
 void CHECK_PROBTABLE()
@@ -1017,16 +985,16 @@ void SETUP_FILE_STREAMS()
 {
   string sys = convertInt(Lx)+"x"+convertInt(Ly);
   // Name of file:
-  string infile = dir+"data/"+sys+"/DIST/SDE-TIM-"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
-  string errfile= dir+"data/"+sys+"/ERR/ERR_SDE-TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
-  string sdefile= dir+"data/"+sys+"/SDE/SDE-TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);
+  string infile = dir+"data/"+sys+"/DIST/TIM-"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);     // MC results
+  string errfile= dir+"data/"+sys+"/ERR/ERR_SDE-TIM-h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);     // error file
+  string sdefile= dir+"data/"+sys+"/SDE/SDE-TIM-"+sys+"h"+convertInt(h_iter)+"p"+convertInt(batch)+"beta"+convertDouble(beta);   // SDE results
   
   int ret=-1;
   struct stat buff;
   ret=stat(infile.c_str(), &buff );
   // This will test if the file exists..
   // If it does not then create it and start fresh. 
-
+  
 #if(!append)
   fp1.open(infile.c_str(), ios::out);
   ferr.open ( errfile.c_str(), ios:: out  );  
